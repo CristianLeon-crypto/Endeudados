@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endeudados - Control de Finanzas Personales</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Barra de navegación superior -->
+  <header class="navbar">
+    <div class="logo">
+      <span class="logo-icon">💰</span>
+      <span class="logo-text">Endeudados</span>
+    </div>
+    <nav class="nav-links">
+      <a href="#problema">El Problema</a>
+      <a href="#gastos-hormiga">Gastos Hormiga</a>
+      <a href="#simulador">Simulador</a>
+      <a href="#seguridad">Privacidad</a>
+    </nav>
+    <div class="nav-buttons">
+      <a href="login.html" class="btn btn-secondary">Iniciar Sesión</a>
+      <a href="login.html" class="btn btn-primary">Crear Cuenta</a>
+    </div>
+  </header>
+
+  <!-- Hero / Pantalla de bienvenida -->
+  <main class="hero-section">
+    <div class="hero-content">
+      <span class="badge">Jóvenes de 22 a 28 años en su primer empleo</span>
+      <h1>Toma el control real de tus <span class="highlight">ingresos y deudas</span></h1>
+      <p>En Colombia, el 70% de los primeros créditos son de menores de 28 años, pero solo representan el 18,1% del saldo total de la deuda. Registra tus ingresos y gastos del mes y sabe exactamente cuánto dinero tienes disponible.</p>
+
+      <div class="hero-actions">
+        <a href="login.html" class="btn btn-primary btn-large">Comenzar ahora gratis</a>
+        <a href="#simulador" class="btn btn-outline btn-large">Probar simulador de deuda</a>
+      </div>
+
+      <div class="features-preview">
+        <div class="feature-item">
+          <span class="feature-icon">🆔</span>
+          <p>Identificación única por cédula</p>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">📈</span>
+          <p>Balance mensual automático</p>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🔒</span>
+          <p>Datos 100% seguros y privados</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Estadísticas de contexto -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-box">
+        <span class="stat-num">70%</span>
+        <span class="stat-label">De los primeros créditos en Colombia son de menores de 28 años (DataCrédito Experian)</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num amber">44,1%</span>
+        <span class="stat-label">De los deudores en mora incumplen por gastar más de lo que perciben (Bravo, 2026)</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num">118.000</span>
+        <span class="stat-label">Colombianos acceden por primera vez al crédito cada mes</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num amber">23,73% - 63,83%</span>
+        <span class="stat-label">Rango de tasa efectiva anual en productos de bajo monto</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- El Problema: Puntos Ciegos -->
+  <section id="problema" class="content-section">
+    <div class="section-header">
+      <span class="eyebrow">Diagnóstico</span>
+      <h2>Los 3 puntos ciegos del sobreendeudamiento</h2>
+      <p>Cuando un recién graduado adquiere tarjetas, créditos de libre inversión, Icetex y microcréditos digitales a la vez, pierde de vista tres cosas clave.</p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="info-card">
+        <span class="card-number">1</span>
+        <h3>Dinero disponible real</h3>
+        <p>No logran identificar cuánto tienen disponible después de cubrir vivienda, alimentación y transporte.</p>
+      </div>
+      <div class="info-card">
+        <span class="card-number amber">2</span>
+        <h3>Prioridad de pago</h3>
+        <p>No saben qué deudas pagar primero frente a tasas que van del 23,73% al 63,83% efectivo anual.</p>
+      </div>
+      <div class="info-card">
+        <span class="card-number">3</span>
+        <h3>Decisiones concretas</h3>
+        <p>No tienen claridad sobre qué acciones tomar para recuperar su estabilidad sin sacrificar lo esencial.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gastos Hormiga -->
+  <section id="gastos-hormiga" class="content-section alt-bg">
+    <div class="section-header">
+      <span class="eyebrow">Fugas invisibles</span>
+      <h2>Los gastos hormiga que drenan tu sueldo</h2>
+      <p>Registrar tus gastos del mes te permite verlos antes de que se conviertan en deuda.</p>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="hormiga-table">
+        <thead>
+          <tr>
+            <th>Gasto frecuente</th>
+            <th>Costo mensual aprox.</th>
+            <th>Impacto anual</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Café / domicilios diarios</td>
+            <td>$180.000 - $260.000</td>
+            <td>$2.160.000 - $3.120.000</td>
+          </tr>
+          <tr>
+            <td>Suscripciones olvidadas</td>
+            <td>$95.000</td>
+            <td>$1.140.000</td>
+          </tr>
+          <tr>
+            <td>Transporte por app en trayectos cortos</td>
+            <td>$110.000</td>
+            <td>$1.320.000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Simulador -->
+  <section id="simulador" class="content-section">
+    <div class="section-header">
+      <span class="eyebrow">Método Avalancha</span>
+      <h2>¿Qué pasa si abonas un extra mensual?</h2>
+      <p>Simula el efecto de destinar un abono adicional a tu deuda con mayor tasa de interés.</p>
+    </div>
+
+    <div class="simulator-card">
+      <div class="simulator-control">
+        <label for="abono-extra">Abono mensual adicional a capital</label>
+        <span id="abono-valor" class="simulator-value">$0 COP/mes</span>
+        <input type="range" id="abono-extra" min="0" max="400000" step="25000" value="0">
+      </div>
+
+      <div class="simulator-results">
+        <div class="result-box">
+          <span class="result-label">Tiempo estimado para salir de deuda</span>
+          <span id="resultado-meses" class="result-value">24 meses</span>
+        </div>
+        <div class="result-box">
+          <span class="result-label">Ahorro estimado en intereses (12 meses)</span>
+          <span id="resultado-ahorro" class="result-value">$0</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Privacidad -->
+  <section id="seguridad" class="content-section alt-bg">
+    <div class="section-header">
+      <span class="eyebrow">Marco legal colombiano</span>
+      <h2>Tus datos, protegidos por ley</h2>
+      <p>Cumplimos con la Ley 1581 de 2012 (protección de datos) y la Ley 1266 de 2008 (Habeas Data Financiero).</p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="info-card">
+        <h3>🔒 Cifrado y minimización</h3>
+        <p>Solo almacenamos las cifras necesarias de ingresos y gastos, cifradas en tránsito y reposo.</p>
+      </div>
+      <div class="info-card">
+        <h3>🚫 Nunca se comparten</h3>
+        <p>Tus datos no se venden ni se reportan a centrales de riesgo como Cifin o DataCrédito.</p>
+      </div>
+      <div class="info-card">
+        <h3>🆔 Control del titular</h3>
+        <p>Puedes eliminar tu cuenta y tus datos en cualquier momento, conforme al artículo 9 de la Ley 1581.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA final -->
+  <section class="cta-section">
+    <h2>Recupera tu tranquilidad financiera antes de fin de mes</h2>
+    <p>Únete a los jóvenes profesionales que ya controlan sus ingresos y gastos.</p>
+    <div class="hero-actions">
+      <a href="login.html" class="btn btn-primary btn-large">Crear mi cuenta con cédula</a>
+      <a href="login.html" class="btn btn-outline btn-large">Ya tengo cuenta</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>© 2026 Endeudados Colombia. Control financiero para jóvenes en su primer empleo formal.</p>
+  </footer>
+
+  <script src="js/index.js"></script>
+</body>
+</html>
