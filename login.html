@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DebtMap — Acceso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Karla:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#17233A;
+    --ink-soft:#33425c;
+    --paper:#EDEEE6;
+    --paper-raised:#F6F6F0;
+    --line:#CFD0C3;
+    --line-strong:#B7B8A9;
+    --coin:#A9781F;
+    --coin-deep:#8A6117;
+    --leaf:#4C7A63;
+    --brick:#9C4436;
+    --brick-bg:#F4E7E3;
+    --radius-s:3px;
+    --font-display:'Fraunces', serif;
+    --font-mono:'IBM Plex Mono', monospace;
+    --font-body:'Karla', sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:var(--paper);
+    min-height:100vh;
+  }
+
+  .wrap{
+    display:grid;
+    grid-template-columns: 1.05fr 1fr;
+    min-height:100vh;
+  }
+
+  /* ---------- LEFT: LEDGER PANEL ---------- */
+  .ledger{
+    background:var(--ink);
+    color:var(--paper);
+    padding:clamp(2rem, 4vw, 4rem);
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .brand{
+    font-family:var(--font-display);
+    font-weight:500;
+    font-size:1.35rem;
+    letter-spacing:0.01em;
+    color:var(--paper);
+    text-decoration:none;
+    display:inline-block;
+    margin-bottom:clamp(2rem, 6vw, 4.5rem);
+  }
+  .brand span{color:var(--coin);}
+
+  .ledger-hero h1{
+    font-family:var(--font-display);
+    font-weight:500;
+    font-size:clamp(2rem, 3.6vw, 2.9rem);
+    line-height:1.15;
+    margin:0 0 0.9rem;
+    max-width:15ch;
+  }
+  .ledger-hero p{
+    font-size:1.02rem;
+    line-height:1.55;
+    color:#C7CCD8;
+    max-width:34ch;
+    margin:0 0 2.4rem;
+  }
+
+  /* statement card */
+  .statement{
+    background:var(--paper-raised);
+    color:var(--ink);
+    border-radius:6px;
+    padding:1.4rem 1.5rem 1.2rem;
+    max-width:420px;
+    position:relative;
+  }
+  .statement-title{
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    margin:0 0 0.9rem;
+    display:flex;
+    justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    padding-bottom:0.7rem;
+  }
+  .statement-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:1rem;
+    padding:0.42rem 0;
+    font-size:0.92rem;
+    border-bottom:1px dashed var(--line);
+  }
+  .statement-row:last-of-type{border-bottom:none;}
+  .statement-row .label{color:var(--ink-soft);}
+  .statement-row .amount{
+    font-family:var(--font-mono);
+    font-size:0.9rem;
+    white-space:nowrap;
+  }
+  .statement-row.positive .amount{color:var(--leaf);}
+  .statement-row.flagged{position:relative;}
+  .statement-row.flagged .label{color:var(--ink);font-weight:600;}
+  .statement-row.flagged::before{
+    content:"";
+    position:absolute;
+    left:-1.5rem;
+    top:50%;
+    width:6px;height:6px;
+    background:var(--coin);
+    border-radius:50%;
+    transform:translateY(-50%);
+  }
+  .statement-row.deficit{
+    border-top:1px solid var(--ink);
+    margin-top:0.3rem;
+    padding-top:0.6rem;
+    font-weight:600;
+  }
+  .statement-row.deficit .amount{color:var(--brick);}
+
+  .statement-note{
+    display:flex;
+    align-items:center;
+    gap:0.5rem;
+    margin-top:0.9rem;
+    font-size:0.78rem;
+    color:var(--coin-deep);
+    opacity:0;
+    transform:translateY(-4px);
+    transition:opacity .5s ease, transform .5s ease;
+  }
+  .statement-note.show{opacity:1; transform:translateY(0);}
+  .statement-note .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--coin);
+    flex:none;
+  }
+
+  .ledger-foot{
+    font-size:0.82rem;
+    color:#98A0B2;
+    max-width:34ch;
+    line-height:1.5;
+    margin-top:2.4rem;
+  }
+  .ledger-foot strong{color:#C7CCD8;font-weight:500;}
+
+  /* ---------- RIGHT: FORM PANEL ---------- */
+  .formside{
+    background:var(--paper);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:clamp(1.5rem, 4vw, 3rem);
+  }
+  .formcard{
+    width:100%;
+    max-width:400px;
+  }
+
+  .tabs{
+    display:flex;
+    position:relative;
+    border-bottom:1px solid var(--line-strong);
+    margin-bottom:2.1rem;
+  }
+  .tab{
+    flex:1;
+    background:none;
+    border:none;
+    font-family:var(--font-body);
+    font-size:0.98rem;
+    font-weight:600;
+    color:var(--ink-soft);
+    padding:0.75rem 0.25rem 0.9rem;
+    cursor:pointer;
+  }
+  .tab[aria-selected="true"]{color:var(--ink);}
+  .tab:focus-visible{outline:2px solid var(--coin); outline-offset:3px;}
+  .indicator{
+    position:absolute;
+    bottom:-1px;
+    left:0;
+    width:50%;
+    height:2px;
+    background:var(--coin);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+  }
+  .tabs[data-active="register"] .indicator{transform:translateX(100%);}
+
+  .panetitle{
+    font-family:var(--font-display);
+    font-weight:500;
+    font-size:1.5rem;
+    margin:0 0 0.35rem;
+  }
+  .panesub{
+    font-size:0.88rem;
+    color:var(--ink-soft);
+    margin:0 0 1.6rem;
+    line-height:1.5;
+  }
+
+  form{display:flex; flex-direction:column; gap:1.15rem;}
+  form[hidden]{display:none;}
+
+  .field{display:flex; flex-direction:column; gap:0.35rem;}
+  .field label{
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  .field .input-row{
+    display:flex;
+    align-items:center;
+    border-bottom:1.5px solid var(--line-strong);
+    transition:border-color .15s ease;
+  }
+  .field .input-row:focus-within{border-color:var(--coin);}
+  .field.has-error .input-row{border-color:var(--brick);}
+
+  .field input{
+    flex:1;
+    border:none;
+    background:none;
+    padding:0.5rem 0.1rem;
+    font-family:var(--font-body);
+    font-size:0.96rem;
+    color:var(--ink);
+    outline:none;
+    min-width:0;
+  }
+  .field input::placeholder{color:#9AA0AC;}
+
+  .toggle-vis{
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:0.3rem;
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+  }
+  .toggle-vis:focus-visible{outline:2px solid var(--coin); outline-offset:2px;}
+  .toggle-vis svg{width:18px;height:18px;}
+
+  .errtext{
+    font-size:0.76rem;
+    color:var(--brick);
+    min-height:1em;
+    margin:0;
+  }
+
+  .row-between{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:0.82rem;
+  }
+
+  .checkline{
+    display:flex;
+    align-items:flex-start;
+    gap:0.6rem;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    line-height:1.45;
+  }
+  .checkline input[type="checkbox"]{
+    appearance:none;
+    width:16px;height:16px;
+    border:1.5px solid var(--line-strong);
+    border-radius:2px;
+    background:var(--paper-raised);
+    margin:0.1rem 0 0;
+    flex:none;
+    cursor:pointer;
+    position:relative;
+  }
+  .checkline input[type="checkbox"]:checked{
+    background:var(--coin);
+    border-color:var(--coin);
+  }
+  .checkline input[type="checkbox"]:checked::after{
+    content:"";
+    position:absolute;
+    left:4px; top:1px;
+    width:5px; height:9px;
+    border-right:2px solid var(--paper-raised);
+    border-bottom:2px solid var(--paper-raised);
+    transform:rotate(40deg);
+  }
+  .checkline input[type="checkbox"]:focus-visible{outline:2px solid var(--coin); outline-offset:2px;}
+  .checkline a{color:var(--coin-deep); text-decoration:underline;}
+
+  .remember{
+    display:flex; align-items:center; gap:0.5rem;
+    color:var(--ink-soft);
+  }
+  .remember input[type="checkbox"]{
+    appearance:none;
+    width:15px;height:15px;
+    border:1.5px solid var(--line-strong);
+    border-radius:2px;
+    background:var(--paper-raised);
+    cursor:pointer;
+    position:relative;
+  }
+  .remember input[type="checkbox"]:checked{background:var(--coin); border-color:var(--coin);}
+  .remember input[type="checkbox"]:checked::after{
+    content:"";
+    position:absolute;
+    left:3.5px; top:0.5px;
+    width:4px; height:8px;
+    border-right:2px solid var(--paper-raised);
+    border-bottom:2px solid var(--paper-raised);
+    transform:rotate(40deg);
+  }
+
+  .linklike{
+    background:none;border:none;
+    color:var(--coin-deep);
+    font-size:0.82rem;
+    cursor:pointer;
+    padding:0;
+    text-decoration:underline;
+    font-family:var(--font-body);
+  }
+  .hint{
+    font-size:0.76rem;
+    color:var(--ink-soft);
+    margin:-0.3rem 0 0;
+    min-height:1em;
+  }
+
+  button.submit{
+    margin-top:0.4rem;
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    border-radius:var(--radius-s);
+    padding:0.85rem 1rem;
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:0.96rem;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  button.submit:hover{background:var(--ink-soft);}
+  button.submit:focus-visible{outline:2px solid var(--coin); outline-offset:3px;}
+
+  .consent{
+    font-size:0.74rem;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin-top:0.3rem;
+  }
+  .consent a{color:var(--coin-deep); text-decoration:underline;}
+
+  .success{
+    display:none;
+    background:var(--paper-raised);
+    border-left:3px solid var(--leaf);
+    padding:1rem 1.1rem;
+    font-size:0.88rem;
+    line-height:1.5;
+    color:var(--ink);
+    border-radius:0 4px 4px 0;
+  }
+  .success.show{display:block;}
+  .success strong{display:block; margin-bottom:0.25rem; color:var(--leaf);}
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 880px){
+    .wrap{grid-template-columns:1fr;}
+    .ledger{padding:2rem 1.4rem 2.4rem;}
+    .ledger-hero p{margin-bottom:1.6rem;}
+    .statement{max-width:100%;}
+    .ledger-foot{display:none;}
+    .formside{padding:2rem 1.4rem 3rem;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .statement-note, .indicator{transition:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- LEFT: LEDGER / STATEMENT PANEL -->
+  <aside class="ledger">
+    <div>
+      <span class="brand">Debt<span>Map</span></span>
+
+      <div class="ledger-hero">
+        <h1>Antes de pagar cualquier deuda, entiende a dónde se fue tu plata.</h1>
+        <p>Reenvía tu extracto bancario y DebtMap lo lee por ti: qué gastaste, qué debes y qué pagar primero.</p>
+      </div>
+
+      <div class="statement">
+        <p class="statement-title"><span>Extracto · agosto</span><span>Cuenta nómina</span></p>
+
+        <div class="statement-row positive">
+          <span class="label">Nómina Contech S.A.S.</span>
+          <span class="amount">+$2.800.000</span>
+        </div>
+        <div class="statement-row">
+          <span class="label">Arriendo</span>
+          <span class="amount">−$950.000</span>
+        </div>
+        <div class="statement-row flagged" id="antRow">
+          <span class="label">Rappi · 7 pedidos</span>
+          <span class="amount">−$180.000</span>
+        </div>
+        <div class="statement-row">
+          <span class="label">Tarjeta Bancolombia Oro</span>
+          <span class="amount">−$680.000</span>
+        </div>
+        <div class="statement-row deficit">
+          <span class="label">Disponible real</span>
+          <span class="amount">−$200.000</span>
+        </div>
+
+        <p class="statement-note" id="antNote"><span class="dot"></span>Gasto hormiga detectado: 8 de esos 7 pedidos fueron un viernes en la noche.</p>
+      </div>
+    </div>
+
+    <p class="ledger-foot"><strong>70 %</strong> de quienes acceden a su primer crédito en Colombia tienen entre 18 y 28 años. DebtMap está hecho para ese momento.</p>
+  </aside>
+
+  <!-- RIGHT: LOGIN / REGISTER -->
+  <main class="formside">
+    <div class="formcard">
+
+      <div class="tabs" id="tabs" data-active="login">
+        <button class="tab" id="tabLogin" role="tab" aria-selected="true" aria-controls="loginForm">Iniciar sesión</button>
+        <button class="tab" id="tabRegister" role="tab" aria-selected="false" aria-controls="registerForm">Crear cuenta</button>
+        <span class="indicator" aria-hidden="true"></span>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="loginPane">
+        <h2 class="panetitle">Bienvenido de nuevo</h2>
+        <p class="panesub">Entra para ver en qué va tu plan de esta semana.</p>
+
+        <form id="loginForm" novalidate>
+          <div class="field" id="loginEmailField">
+            <label for="loginEmail">Correo</label>
+            <div class="input-row">
+              <input type="email" id="loginEmail" name="email" placeholder="tú@correo.com" autocomplete="email">
+            </div>
+            <p class="errtext" id="loginEmailErr"></p>
+          </div>
+
+          <div class="field" id="loginPassField">
+            <label for="loginPass">Contraseña</label>
+            <div class="input-row">
+              <input type="password" id="loginPass" name="password" placeholder="Tu contraseña" autocomplete="current-password">
+              <button type="button" class="toggle-vis" data-target="loginPass" aria-label="Mostrar contraseña">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <p class="errtext" id="loginPassErr"></p>
+          </div>
+
+          <div class="row-between">
+            <label class="remember">
+              <input type="checkbox" name="remember">
+              Recordarme
+            </label>
+            <button type="button" class="linklike" id="forgotBtn">¿Olvidaste tu contraseña?</button>
+          </div>
+          <p class="hint" id="forgotHint"></p>
+
+          <button type="submit" class="submit">Entrar</button>
+        </form>
+
+        <div class="success" id="loginSuccess">
+          <strong>Sesión iniciada</strong>
+          Cargando tu diagnóstico financiero…
+        </div>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="registerPane" hidden>
+        <h2 class="panetitle">Crea tu cuenta</h2>
+        <p class="panesub">Toma cinco minutos. Sin digitar un solo movimiento a mano.</p>
+
+        <form id="registerForm" novalidate>
+          <div class="field" id="regNameField">
+            <label for="regName">Nombre</label>
+            <div class="input-row">
+              <input type="text" id="regName" name="name" placeholder="Tu nombre completo" autocomplete="name">
+            </div>
+            <p class="errtext" id="regNameErr"></p>
+          </div>
+
+          <div class="field" id="regEmailField">
+            <label for="regEmail">Correo</label>
+            <div class="input-row">
+              <input type="email" id="regEmail" name="email" placeholder="tú@correo.com" autocomplete="email">
+            </div>
+            <p class="errtext" id="regEmailErr"></p>
+          </div>
+
+          <div class="field" id="regPassField">
+            <label for="regPass">Contraseña</label>
+            <div class="input-row">
+              <input type="password" id="regPass" name="password" placeholder="Mínimo 8 caracteres, con un número" autocomplete="new-password">
+              <button type="button" class="toggle-vis" data-target="regPass" aria-label="Mostrar contraseña">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <p class="errtext" id="regPassErr"></p>
+          </div>
+
+          <div class="field" id="regConfirmField">
+            <label for="regConfirm">Confirmar contraseña</label>
+            <div class="input-row">
+              <input type="password" id="regConfirm" name="confirm" placeholder="Repite tu contraseña" autocomplete="new-password">
+              <button type="button" class="toggle-vis" data-target="regConfirm" aria-label="Mostrar contraseña">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <p class="errtext" id="regConfirmErr"></p>
+          </div>
+
+          <label class="checkline">
+            <input type="checkbox" id="regConsent" name="consent">
+            Autorizo el tratamiento de mis datos financieros para generar mi diagnóstico, según la <a href="#" onclick="return false;">Ley 1581 de 2012</a>. Puedo revocarlo cuando quiera.
+          </label>
+          <p class="errtext" id="regConsentErr"></p>
+
+          <button type="submit" class="submit">Crear mi cuenta</button>
+        </form>
+
+        <div class="success" id="registerSuccess">
+          <strong>Cuenta creada</strong>
+          Te enviamos tu dirección de reenvío única. Configúrala en tu banco y tu primer diagnóstico estará listo en minutos.
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+  // ---- Tabs ----
+  const tabs = document.getElementById('tabs');
+  const tabLogin = document.getElementById('tabLogin');
+  const tabRegister = document.getElementById('tabRegister');
+  const loginPane = document.getElementById('loginPane');
+  const registerPane = document.getElementById('registerPane');
+
+  function activate(which){
+    const isLogin = which === 'login';
+    tabs.dataset.active = which;
+    tabLogin.setAttribute('aria-selected', String(isLogin));
+    tabRegister.setAttribute('aria-selected', String(!isLogin));
+    loginPane.hidden = !isLogin;
+    registerPane.hidden = isLogin;
+  }
+  tabLogin.addEventListener('click', () => activate('login'));
+  tabRegister.addEventListener('click', () => activate('register'));
+
+  // ---- Password visibility toggles ----
+  document.querySelectorAll('.toggle-vis').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.setAttribute('aria-label', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
+    });
+  });
+
+  // ---- Forgot password (demo, no backend) ----
+  document.getElementById('forgotBtn').addEventListener('click', () => {
+    document.getElementById('forgotHint').textContent = 'Te enviaremos un enlace de recuperación a tu correo. (función de demostración)';
+  });
+
+  // ---- Helpers ----
+  function setError(fieldId, errId, message){
+    document.getElementById(fieldId).classList.toggle('has-error', Boolean(message));
+    document.getElementById(errId).textContent = message || '';
+  }
+  const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+  // ---- Login validation ----
+  const loginForm = document.getElementById('loginForm');
+  loginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPass').value;
+    let ok = true;
+
+    if (!emailOk(email)) { setError('loginEmailField','loginEmailErr','Escribe un correo válido.'); ok = false; }
+    else setError('loginEmailField','loginEmailErr','');
+
+    if (pass.length < 1) { setError('loginPassField','loginPassErr','Escribe tu contraseña.'); ok = false; }
+    else setError('loginPassField','loginPassErr','');
+
+    if (ok){
+      loginForm.style.display = 'none';
+      document.getElementById('loginSuccess').classList.add('show');
+    }
+  });
+
+  // ---- Register validation ----
+  const registerForm = document.getElementById('registerForm');
+  registerForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value;
+    const pass = document.getElementById('regPass').value;
+    const confirm = document.getElementById('regConfirm').value;
+    const consent = document.getElementById('regConsent').checked;
+    let ok = true;
+
+    if (name.length < 2) { setError('regNameField','regNameErr','Escribe tu nombre.'); ok = false; }
+    else setError('regNameField','regNameErr','');
+
+    if (!emailOk(email)) { setError('regEmailField','regEmailErr','Escribe un correo válido.'); ok = false; }
+    else setError('regEmailField','regEmailErr','');
+
+    if (pass.length < 8 || !/\d/.test(pass)) { setError('regPassField','regPassErr','Mínimo 8 caracteres e incluye un número.'); ok = false; }
+    else setError('regPassField','regPassErr','');
+
+    if (confirm !== pass || confirm.length === 0) { setError('regConfirmField','regConfirmErr','Las contraseñas no coinciden.'); ok = false; }
+    else setError('regConfirmField','regConfirmErr','');
+
+    if (!consent) { document.getElementById('regConsentErr').textContent = 'Necesitamos tu autorización para continuar.'; ok = false; }
+    else document.getElementById('regConsentErr').textContent = '';
+
+    if (ok){
+      registerForm.style.display = 'none';
+      document.getElementById('registerSuccess').classList.add('show');
+    }
+  });
+
+  // ---- One-time "ant expense" reveal on load ----
+  window.addEventListener('DOMContentLoaded', () => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const note = document.getElementById('antNote');
+    setTimeout(() => note.classList.add('show'), reduce ? 0 : 700);
+  });
+</script>
+
+</body>
+</html>
