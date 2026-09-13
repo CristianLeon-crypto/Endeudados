@@ -1,4 +1,9 @@
 
+// Si la página fue recargada (F5), devolver al usuario a la landing
+if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+  window.location.replace('../index.html');
+}
+
 const tabLogin = document.getElementById('tab-login');
 const tabRegistro = document.getElementById('tab-registro');
 const formLogin = document.getElementById('form-login');
