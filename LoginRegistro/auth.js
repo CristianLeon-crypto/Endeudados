@@ -1,39 +1,10 @@
-/**
-  * @file Supabase Authentication - auth.js
- */
+/// SUBASE datos
 const SUPABASE_URL = 'https://nuuqonentwzzhptkjjyh.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_q6mqvT5opf6IdhtSQ8Kq0Q_H-BlIRxT';
 const { createClient } = supabase;
 const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-
-const tabLogin = document.getElementById('tab-login');
-const tabRegistro = document.getElementById('tab-registro');
-const formLogin = document.getElementById('form-login');
-const formRegistro = document.getElementById('form-registro');
-
-function activarTabLogin() {
-  tabLogin.classList.add('active');
-  tabRegistro.classList.remove('active');
-  formLogin.classList.remove('hidden');
-  formRegistro.classList.add('hidden');
-}
-
-function activarTabRegistro() {
-  tabRegistro.classList.add('active');
-  tabLogin.classList.remove('active');
-  formRegistro.classList.remove('hidden');
-  formLogin.classList.add('hidden');
-}
-
-tabLogin.addEventListener('click', activarTabLogin);
-tabRegistro.addEventListener('click', activarTabRegistro);
-
-
-// ===============================
 // MENSAJES DE ERROR
-// ===============================
-
 const loginError = document.getElementById('login-error');
 const regError = document.getElementById('reg-error');
 
@@ -47,11 +18,7 @@ function ocultarError(elemento) {
   elemento.classList.add('hidden');
 }
 
-
-// ===============================
 // REGISTRO DE USUARIO
-// ===============================
-
 formRegistro.addEventListener('submit', async function (event) {
   event.preventDefault();
 
@@ -126,11 +93,7 @@ formRegistro.addEventListener('submit', async function (event) {
   }
 });
 
-
-// ===============================
 // INICIO DE SESIÓN
-// ===============================
-
 formLogin.addEventListener('submit', async function (event) {
   event.preventDefault();
 

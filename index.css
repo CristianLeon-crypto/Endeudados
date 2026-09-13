@@ -257,36 +257,7 @@ p {
 .hidden {
   display: none !important;
 }
-/* Estilos para la página de login completa */
-.auth-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
 
-.auth-container {
-  margin: auto;
-}
-
-.back-link {
-  display: inline-block;
-  color: #94a3b8;
-  text-decoration: none;
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
-}
-
-.back-link:hover {
-  color: #34d399;
-}
-
-a.btn {
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
 /* Nav links */
 .nav-links {
   display: none;
