@@ -4,9 +4,11 @@ const SUPABASE_ANON_KEY = 'sb_publishable_q6mqvT5opf6IdhtSQ8Kq0Q_H-BlIRxT';
 const { createClient } = supabase;
 const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// MENSAJES DE ERROR
+// MENSAJES DE ERROR / INFORMACIÓN
 const loginError = document.getElementById('login-error');
+const loginInfo = document.getElementById('login-info');
 const regError = document.getElementById('reg-error');
+const regSuccess = document.getElementById('reg-success');
 
 function mostrarError(elemento, mensaje) {
   elemento.textContent = mensaje;
@@ -23,6 +25,7 @@ formRegistro.addEventListener('submit', async function (event) {
   event.preventDefault();
 
   ocultarError(regError);
+  ocultarError(regSuccess);
 
   const nombre = document.getElementById('reg-nombre').value.trim();
   const cedula = document.getElementById('reg-cedula').value.trim();
@@ -78,10 +81,12 @@ formRegistro.addEventListener('submit', async function (event) {
       return;
     }
 
-    alert('Registro exitoso. Ya puedes iniciar sesión.');
+    mostrarError(
+      regSuccess,
+      'Registro exitoso. Te enviamos un correo de confirmación, revisa tu bandeja de entrada y confirma tu cuenta antes de iniciar sesión.'
+    );
 
     formRegistro.reset();
-    activarTabLogin();
 
   } catch (error) {
     mostrarError(
@@ -98,6 +103,7 @@ formLogin.addEventListener('submit', async function (event) {
   event.preventDefault();
 
   ocultarError(loginError);
+  ocultarError(loginInfo);
 
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
@@ -118,21 +124,25 @@ formLogin.addEventListener('submit', async function (event) {
       });
 
     if (error) {
-      mostrarError(
-        loginError,
-        'Correo o contraseña incorrectos.'
-      );
+      if (error.message && error.message.toLowerCase().includes('confirm')) {
+        mostrarError(
+          loginInfo,
+          'Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa el mensaje que te enviamos a tu correo.'
+        );
+      } else {
+        mostrarError(
+          loginError,
+          'Correo o contraseña incorrectos.'
+        );
+      }
       console.error(error);
       return;
     }
 
     console.log('Usuario autenticado:', data.user);
 
-    // Por ahora mostramos un mensaje de prueba
-    alert('Inicio de sesión exitoso.');
-
-    // Más adelante cambiaremos esto por:
-    // window.location.href = 'dashboard.html';
+    // Redirigir al usuario a la pantalla de Ingresos y Gastos
+    window.location.href = '../IngresosGastos/inGas.html';
 
   } catch (error) {
     mostrarError(

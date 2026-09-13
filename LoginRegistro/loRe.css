@@ -118,6 +118,20 @@ a.btn {
   text-align: center;
 }
 
+.success-msg {
+  color: #34d399;
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.info-msg {
+  color: #fbbf24;
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
 .hidden {
   display: none !important;
 }

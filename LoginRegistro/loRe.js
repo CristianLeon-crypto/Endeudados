@@ -20,4 +20,3 @@ function activarTabRegistro() {
 
 tabLogin.addEventListener('click', activarTabLogin);
 tabRegistro.addEventListener('click', activarTabRegistro);
-
