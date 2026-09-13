@@ -38,6 +38,29 @@ formRegistro.addEventListener('submit', async function (event) {
   }
 
   try {
+    // Verificar que la cédula no esté registrada previamente
+    const { data: cedulaExistente, error: cedulaError } = await client
+      .from('usuarios')
+      .select('cedula')
+      .eq('cedula', cedula)
+      .maybeSingle();
+
+    if (cedulaError) {
+      mostrarError(
+        regError,
+        'No se pudo validar la cédula. Intenta nuevamente.'
+      );
+      return;
+    }
+
+    if (cedulaExistente) {
+      mostrarError(
+        regError,
+        'Ya existe una cuenta registrada con este número de cédula.'
+      );
+      return;
+    }
+
     // Crear usuario en Supabase Authentication
     const { data: authData, error: authError } =
       await client.auth.signUp({
@@ -73,11 +96,18 @@ formRegistro.addEventListener('submit', async function (event) {
       ]);
 
     if (datosError) {
-      mostrarError(
-        regError,
-        'La cuenta fue creada, pero no se pudieron guardar tus datos: ' +
-        datosError.message
-      );
+      if (datosError.code === '23505') {
+        mostrarError(
+          regError,
+          'Ya existe una cuenta registrada con este número de cédula.'
+        );
+      } else {
+        mostrarError(
+          regError,
+          'La cuenta fue creada, pero no se pudieron guardar tus datos: ' +
+          datosError.message
+        );
+      }
       return;
     }
 
