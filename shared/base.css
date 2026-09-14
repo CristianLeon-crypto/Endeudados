@@ -1,0 +1,154 @@
+/* Estilos comunes a todas las pantallas.
+ *
+ * Ojo: index.css y LoginRegistro/loRe.css todavia tienen su propia copia de
+ * varias de estas reglas. Migrarlas es EN-29; no se toco aca para no mezclar
+ * un refactor con una feature. Por ahora solo RecuperarPassword usa este
+ * archivo.
+ */
+
+:root {
+  --fondo: #0f172a;
+  --superficie: #1e293b;
+  --borde: rgba(255, 255, 255, 0.1);
+  --borde-input: rgba(255, 255, 255, 0.15);
+  --texto: #f8fafc;
+  --texto-suave: #cbd5e1;
+  --texto-tenue: #94a3b8;
+  --acento: #10b981;
+  --acento-claro: #34d399;
+  --acento-oscuro: #022c22;
+  --error: #f87171;
+  --aviso: #fbbf24;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: radial-gradient(circle at top right, var(--superficie), var(--fondo));
+  color: var(--texto);
+}
+
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.auth-container {
+  margin: auto;
+}
+
+.modal-card {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  padding: 2rem;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.back-link {
+  display: inline-block;
+  color: var(--texto-tenue);
+  text-decoration: none;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.back-link:hover {
+  color: var(--acento-claro);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  margin-bottom: 0.4rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  background: var(--fondo);
+  border: 1px solid var(--borde-input);
+  border-radius: 6px;
+  color: #fff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.form-group input:focus {
+  border-color: var(--acento-claro);
+}
+
+.btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.btn-primary {
+  background-color: var(--acento);
+  color: var(--acento-oscuro);
+}
+
+.btn-primary:hover {
+  background-color: var(--acento-claro);
+  transform: translateY(-1px);
+}
+
+.btn:disabled,
+.btn:disabled:hover {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-full {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+a.btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-msg {
+  color: var(--error);
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.success-msg {
+  color: var(--acento-claro);
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.info-msg {
+  color: var(--aviso);
+  font-size: 0.85rem;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.hidden {
+  display: none !important;
+}
