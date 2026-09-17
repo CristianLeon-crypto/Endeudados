@@ -142,3 +142,20 @@ body {
   background: radial-gradient(circle at top right, #1e293b, #0f172a);
   color: #f8fafc;
 }
+
+/* Enlace a la pantalla de recuperacion de contraseña (EN-14) */
+.olvide-pass {
+  text-align: center;
+  margin: 0.9rem 0 0;
+  font-size: 0.85rem;
+}
+
+.olvide-pass a {
+  color: #94a3b8;
+  text-decoration: none;
+}
+
+.olvide-pass a:hover {
+  color: #34d399;
+  text-decoration: underline;
+}

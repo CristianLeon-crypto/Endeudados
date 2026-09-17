@@ -1,0 +1,16 @@
+/* Solo lo exclusivo de la pantalla de recuperacion.
+ * Lo comun (tarjeta, formularios, botones, mensajes) viene de shared/base.css.
+ */
+
+.rec-titulo {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+  color: var(--texto);
+}
+
+.rec-ayuda {
+  font-size: 0.9rem;
+  color: var(--texto-tenue);
+  margin: 0 0 1.5rem;
+  line-height: 1.45;
+}
