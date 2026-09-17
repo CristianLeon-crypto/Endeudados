@@ -7,6 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <!-- Avance de EN-29: los estilos comunes ya vienen de shared/base.css y
+       loRe.css solo tiene lo exclusivo de esta pantalla (pestañas y enlace de
+       recuperacion). No volver a copiar reglas comunes aca.
+       Pendiente de EN-29: que auth.js use shared/supabase.js en vez de su
+       propia URL y key (hoy chocarian las constantes si se cargan los dos). -->
   <link rel="stylesheet" href="../shared/base.css">
   <link rel="stylesheet" href="loRe.css">
   <!-- SDK oficial de Supabase -->

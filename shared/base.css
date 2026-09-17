@@ -296,6 +296,68 @@ svg {
   text-align: left;
 }
 
+/* Encabezado dividido: etiqueta corta en una columna angosta a la izquierda y
+ * titulo + texto en la columna ancha. En celular se apila. */
+.encabezado-dividido {
+  display: grid;
+  gap: 0.25rem 2rem;
+  margin-bottom: clamp(2rem, 4vw, 3.5rem);
+}
+
+.encabezado-dividido .texto-seccion {
+  max-width: 60ch;
+}
+
+@media (min-width: 900px) {
+  .encabezado-dividido {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr);
+    align-items: start;
+  }
+
+  .encabezado-dividido .eyebrow {
+    margin-top: 1.1rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Panel visual: bloque enmarcado con el degradado vibrante y textura, que
+ * sirve de fondo a un elemento flotante (tarjeta de ejemplo, widget, marca).
+ * No lleva texto marfil directamente encima: el contenido que se ponga adentro
+ * debe ir sobre una tarjeta clara.
+ * ------------------------------------------------------------------------- */
+
+.panel-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  background: var(--degradado-vibrante);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Textura de grano sobre el degradado (ruido en escala de grises, no agrega color) */
+.panel-visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.22;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Panel oscuro con degradado verde que si puede llevar texto marfil: termina
+ * en --verde-600 (#1F6A3D), donde el marfil todavia da 5.6:1. */
+.panel-texto {
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  background: linear-gradient(160deg, var(--verde-negro) 0%, var(--verde-700) 60%, var(--verde-600) 100%);
+}
+
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -645,17 +707,42 @@ svg {
   }
 }
 
+/* Escritorio: pantalla dividida. A la izquierda un panel de marca que ocupa
+ * todo el alto (logo arriba, titulo y barras abajo); a la derecha el
+ * formulario centrado en su mitad. */
 @media (min-width: 900px) {
   .auth-layout {
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(2rem, 6vw, 6rem);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: stretch;
+    align-content: stretch;
+    padding: 1.25rem;
   }
 
   .auth-marca {
-    justify-self: end;
+    max-width: none;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(2rem, 4vw, 3.5rem);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-lg);
+    background: linear-gradient(160deg, var(--verde-negro) 0%, var(--verde-700) 60%, var(--verde-600) 100%);
+  }
+
+  .auth-marca .titulo-seccion {
+    margin-top: auto;
+    max-width: 14ch;
+    font-size: clamp(2.4rem, 4.2vw, 3.75rem);
+  }
+
+  /* Sobre el final del degradado el marfil suave no alcanza AA: texto pleno */
+  .auth-marca .texto-seccion {
+    color: var(--marfil);
   }
 
   .auth-container {
-    justify-self: start;
+    align-self: center;
+    justify-self: center;
   }
 }

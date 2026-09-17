@@ -35,35 +35,37 @@
   }
 }
 
+/* Tarjeta de cifra: icono en la esquina superior derecha y el monto abajo,
+ * para que las tres cifras queden alineadas sobre la misma linea base. */
 .resumen-card {
+  position: relative;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   gap: 0.35rem;
   min-width: 0;
 }
 
 .resumen-card .icono-circulo {
-  margin-bottom: 1rem;
+  position: absolute;
+  top: clamp(1.25rem, 3vw, 1.75rem);
+  right: clamp(1.25rem, 3vw, 1.75rem);
 }
 
-/* En celular el icono se acomoda a la derecha para que las tres tarjetas
- * apiladas ocupen menos alto */
-@media (max-width: 759px) {
-  .resumen-card {
-    position: relative;
-  }
+.resumen-card .resumen-etiqueta {
+  padding-right: 3.5rem;
+}
 
+@media (min-width: 760px) {
+  .resumen-card {
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 759px) {
   .resumen-card .icono-circulo {
-    position: absolute;
-    top: 1.25rem;
-    right: 1.25rem;
     width: 2.25rem;
     height: 2.25rem;
-    margin: 0;
-  }
-
-  .resumen-card .resumen-etiqueta {
-    padding-right: 3rem;
   }
 }
 
