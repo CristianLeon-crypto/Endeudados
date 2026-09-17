@@ -1,112 +1,444 @@
-/* Estilos comunes a todas las pantallas.
+/* Sistema de diseño compartido por todas las pantallas.
  *
- * Ojo: index.css y LoginRegistro/loRe.css todavia tienen su propia copia de
- * varias de estas reglas. Migrarlas es EN-29; no se toco aca para no mezclar
- * un refactor con una feature. Por ahora solo RecuperarPassword usa este
- * archivo.
+ * Aca viven los colores, la tipografia y los componentes comunes (barra de
+ * navegacion, secciones, botones, formularios, mensajes). Cada pantalla solo
+ * agrega en su propio .css lo que es exclusivo de ella.
+ *
+ * Paleta:
+ *   - Verdes en degradado, de casi negro (#1C1C1C) a vibrante (#28B660):
+ *     fondos, encabezados de seccion y elementos decorativos grandes.
+ *   - Marfil (#F3ECDE): texto sobre fondo oscuro y tarjetas claras.
+ *   - Terracota (#A9501C): iconos, acentos interactivos y enfasis. Nunca como
+ *     fondo grande.
+ *
+ * Contraste (WCAG AA): el marfil sobre el verde vibrante NO alcanza 4.5:1, por
+ * eso el verde vibrante solo va en decoracion sin texto encima, en botones con
+ * texto oscuro o en brillos con opacidad baja. Tampoco hay que poner texto
+ * pequeño en terracota sobre fondo oscuro (3.1:1): para eso esta
+ * --terracota-claro.
  */
 
 :root {
-  --fondo: #0f172a;
-  --superficie: #1e293b;
-  --borde: rgba(255, 255, 255, 0.1);
-  --borde-input: rgba(255, 255, 255, 0.15);
-  --texto: #f8fafc;
-  --texto-suave: #cbd5e1;
-  --texto-tenue: #94a3b8;
-  --acento: #10b981;
-  --acento-claro: #34d399;
-  --acento-oscuro: #022c22;
-  --error: #f87171;
-  --aviso: #fbbf24;
+  /* Verdes */
+  --verde-negro: #1c1c1c;
+  --verde-900: #131f18;
+  --verde-800: #16291e;
+  --verde-700: #1b3a27;
+  --verde-600: #1f6a3d;
+  --verde-500: #28b660;
+  --verde-claro: #5fd08a;   /* texto verde sobre fondo oscuro (8.8:1) */
+  --verde-tinta: #0e1a12;   /* texto oscuro sobre verde vibrante (6.7:1) */
+
+  /* Marfil */
+  --marfil: #f3ecde;
+  --marfil-suave: rgba(243, 236, 222, 0.76);
+  --marfil-tenue: rgba(243, 236, 222, 0.6);
+  --tinta: #1c1c1c;                        /* texto sobre marfil (14.5:1) */
+  --tinta-suave: rgba(28, 28, 28, 0.72);
+
+  /* Terracota */
+  --terracota: #a9501c;                    /* sobre marfil 4.6:1 */
+  --terracota-claro: #e0915f;              /* texto sobre fondo oscuro 6.4:1 */
+  --terracota-fondo: rgba(169, 80, 28, 0.16);
+
+  /* Superficies y bordes sobre fondo oscuro */
+  --superficie: rgba(243, 236, 222, 0.045);
+  --superficie-fuerte: rgba(243, 236, 222, 0.08);
+  --borde: rgba(243, 236, 222, 0.12);
+  --borde-input: rgba(243, 236, 222, 0.2);
+
+  /* Degradados */
+  --degradado-fondo: linear-gradient(165deg, var(--verde-negro) 0%, var(--verde-900) 45%, var(--verde-800) 100%);
+  --degradado-alterno: linear-gradient(200deg, var(--verde-negro) 0%, #172a1f 60%, var(--verde-700) 100%);
+  --degradado-vibrante: linear-gradient(135deg, var(--verde-negro) 0%, var(--verde-600) 55%, var(--verde-500) 100%);
+
+  /* Tipografia */
+  --fuente: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fuente-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+
+  /* Forma */
+  --radio-lg: 28px;
+  --radio-md: 18px;
+  --radio-sm: 12px;
+  --alto-navbar: 4.5rem;
+  --sombra: 0 30px 60px -20px rgba(0, 0, 0, 0.6);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: var(--alto-navbar);
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: radial-gradient(circle at top right, var(--superficie), var(--fondo));
-  color: var(--texto);
+  font-family: var(--fuente);
+  font-size: 1rem;
+  line-height: 1.55;
+  background: var(--verde-negro);
+  color: var(--marfil);
+  -webkit-font-smoothing: antialiased;
 }
 
-.auth-page {
-  display: flex;
-  justify-content: center;
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+img,
+svg {
+  display: block;
+}
+
+/* ---------------------------------------------------------------------------
+ * Utilidades
+ * ------------------------------------------------------------------------- */
+
+.hidden {
+  display: none !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--terracota-claro);
+  outline-offset: 3px;
+}
+
+.icono {
+  width: 1.25em;
+  height: 1.25em;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Palabra destacada en serif italica dentro de un titulo */
+.acento-serif {
+  font-family: var(--fuente-display);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--verde-claro);
+  letter-spacing: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Marca
+ * ------------------------------------------------------------------------- */
+
+.logo {
+  display: inline-flex;
   align-items: center;
-  min-height: 100vh;
-}
-
-.auth-container {
-  margin: auto;
-}
-
-.modal-card {
-  background: var(--superficie);
-  border: 1px solid var(--borde);
-  padding: 2rem;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 420px;
-  position: relative;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-}
-
-.back-link {
-  display: inline-block;
-  color: var(--texto-tenue);
+  gap: 0.6rem;
+  color: var(--marfil);
   text-decoration: none;
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
 }
 
-.back-link:hover {
-  color: var(--acento-claro);
+.logo-marca {
+  width: 2.1rem;
+  height: 2.1rem;
 }
 
-.form-group {
-  margin-bottom: 1rem;
+/* ---------------------------------------------------------------------------
+ * Barra de navegacion (fija, encima de las secciones)
+ * ------------------------------------------------------------------------- */
+
+.navbar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  height: var(--alto-navbar);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+  background: rgba(28, 28, 28, 0.72);
+  border-bottom: 1px solid var(--borde);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.nav-links a {
+  color: var(--marfil-suave);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.nav-links a:hover {
+  color: var(--marfil);
+  background: var(--superficie-fuerte);
+}
+
+.nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Secciones de pantalla completa
+ *
+ * min-height (no height): si el contenido es mas largo que la ventana, sobre
+ * todo en celular, la seccion crece en vez de cortarlo o crear scroll interno.
+ * ------------------------------------------------------------------------- */
+
+.seccion {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: calc(var(--alto-navbar) + 2.5rem) clamp(1rem, 5vw, 4rem) 3.5rem;
+  background: var(--degradado-fondo);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+@media (max-width: 759px) {
+  .seccion {
+    padding-top: calc(var(--alto-navbar) + 1.5rem);
+    padding-bottom: 2.5rem;
+  }
+}
+
+.seccion-alterna {
+  background: var(--degradado-alterno);
+}
+
+/* Brillo verde decorativo. Opacidad baja a proposito para que el texto
+ * marfil que quede encima siga pasando AA. */
+.seccion::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: min(70vw, 720px);
+  aspect-ratio: 1;
+  right: -18%;
+  top: -25%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(40, 182, 96, 0.3) 0%, rgba(40, 182, 96, 0) 68%);
+  pointer-events: none;
+}
+
+.seccion-alterna::before {
+  right: auto;
+  left: -20%;
+  top: auto;
+  bottom: -30%;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+/* Scroll con "iman" entre secciones solo en pantallas amplias. En celular
+ * estorba cuando una seccion es mas alta que la ventana. */
+@media (min-width: 900px) and (min-height: 640px) and (prefers-reduced-motion: no-preference) {
+  html.snap-secciones {
+    scroll-snap-type: y proximity;
+  }
+
+  .snap-secciones .seccion {
+    scroll-snap-align: start;
+  }
+}
+
+.encabezado-seccion {
+  max-width: 680px;
+  margin: 0 auto 2.75rem;
+  text-align: center;
+}
+
+.encabezado-seccion.izquierda {
+  margin-left: 0;
   text-align: left;
 }
 
-.form-group label {
-  display: block;
-  font-size: 0.85rem;
-  color: var(--texto-suave);
-  margin-bottom: 0.4rem;
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--marfil-suave);
 }
 
-.form-group input {
-  width: 100%;
-  padding: 0.65rem 0.85rem;
-  background: var(--fondo);
-  border: 1px solid var(--borde-input);
-  border-radius: 6px;
-  color: #fff;
-  outline: none;
-  box-sizing: border-box;
+.eyebrow::before {
+  content: "";
+  width: 1.75rem;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--terracota), var(--terracota-claro));
 }
 
-.form-group input:focus {
-  border-color: var(--acento-claro);
+.titulo-seccion {
+  font-size: clamp(2rem, 4.4vw, 3.25rem);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  margin-bottom: 1rem;
 }
+
+.texto-seccion {
+  font-size: clamp(1rem, 1.4vw, 1.1rem);
+  color: var(--marfil-suave);
+}
+
+/* ---------------------------------------------------------------------------
+ * Tarjetas
+ * ------------------------------------------------------------------------- */
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+/* Tarjeta clara: texto oscuro sobre marfil */
+.tarjeta-clara {
+  background: var(--marfil);
+  color: var(--tinta);
+  border-color: transparent;
+  box-shadow: var(--sombra);
+}
+
+.icono-circulo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  color: var(--terracota-claro);
+  background: var(--terracota-fondo);
+  border: 1px solid rgba(224, 145, 95, 0.28);
+}
+
+.tarjeta-clara .icono-circulo {
+  color: var(--terracota);
+  background: rgba(169, 80, 28, 0.1);
+  border-color: rgba(169, 80, 28, 0.25);
+}
+
+/* ---------------------------------------------------------------------------
+ * Botones
+ * ------------------------------------------------------------------------- */
 
 .btn {
-  padding: 0.6rem 1.25rem;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.3rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: inherit;
   font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Verde vibrante con texto oscuro: accion principal */
 .btn-primary {
-  background-color: var(--acento);
-  color: var(--acento-oscuro);
+  background: var(--verde-500);
+  color: var(--verde-tinta);
 }
 
 .btn-primary:hover {
-  background-color: var(--acento-claro);
-  transform: translateY(-1px);
+  background: var(--verde-claro);
+}
+
+/* Terracota con texto marfil (4.6:1): accion secundaria */
+.btn-secondary {
+  background: var(--terracota);
+  color: var(--marfil);
+}
+
+.btn-secondary:hover {
+  background: #bd5c22;
+}
+
+.btn-outline {
+  background: transparent;
+  border-color: var(--borde-input);
+  color: var(--marfil);
+}
+
+.btn-outline:hover {
+  border-color: var(--terracota-claro);
+  color: var(--terracota-claro);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--marfil);
+}
+
+.btn-ghost:hover {
+  background: var(--superficie-fuerte);
+}
+
+.btn-large {
+  padding: 0.95rem 1.75rem;
+  font-size: 1rem;
+}
+
+.btn-full {
+  width: 100%;
+  margin-top: 1.25rem;
 }
 
 .btn:disabled,
@@ -116,39 +448,214 @@ body {
   transform: none;
 }
 
-.btn-full {
-  width: 100%;
-  margin-top: 1rem;
+/* ---------------------------------------------------------------------------
+ * Formularios
+ * ------------------------------------------------------------------------- */
+
+.form-group {
+  margin-bottom: 1.1rem;
+  text-align: left;
 }
 
-a.btn {
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.form-group label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--marfil-suave);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--marfil);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--borde-input);
+  border-radius: var(--radio-sm);
+  outline: none;
+  color-scheme: dark;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input::placeholder {
+  color: var(--marfil-tenue);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: var(--verde-500);
+  box-shadow: 0 0 0 3px rgba(40, 182, 96, 0.22);
+}
+
+.form-group input[aria-invalid="true"],
+.form-group select[aria-invalid="true"] {
+  border-color: var(--terracota-claro);
+}
+
+.form-group select option {
+  background: var(--verde-900);
+  color: var(--marfil);
+}
+
+/* ---------------------------------------------------------------------------
+ * Mensajes
+ * ------------------------------------------------------------------------- */
+
+.error-msg,
+.success-msg,
+.info-msg {
+  margin-top: 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radio-sm);
+  border-left: 3px solid;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  text-align: left;
 }
 
 .error-msg {
-  color: var(--error);
-  font-size: 0.85rem;
-  margin-top: 0.75rem;
-  text-align: center;
+  color: var(--terracota-claro);
+  background: var(--terracota-fondo);
+  border-color: var(--terracota-claro);
 }
 
 .success-msg {
-  color: var(--acento-claro);
-  font-size: 0.85rem;
-  margin-top: 0.75rem;
-  text-align: center;
+  color: var(--verde-claro);
+  background: rgba(40, 182, 96, 0.12);
+  border-color: var(--verde-500);
 }
 
 .info-msg {
-  color: var(--aviso);
-  font-size: 0.85rem;
-  margin-top: 0.75rem;
-  text-align: center;
+  color: var(--marfil);
+  background: var(--superficie-fuerte);
+  border-color: var(--marfil-tenue);
 }
 
-.hidden {
-  display: none !important;
+/* Error de un campo puntual, debajo del input */
+.error-campo {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--terracota-claro);
+}
+
+/* ---------------------------------------------------------------------------
+ * Pantallas de autenticacion (login, registro, recuperar contraseña)
+ * ------------------------------------------------------------------------- */
+
+.auth-page {
+  background: var(--verde-negro);
+}
+
+.auth-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: center;
+  align-content: center;
+  justify-items: center;
+  padding: 2rem clamp(1rem, 5vw, 4rem);
+}
+
+.auth-marca {
+  width: 100%;
+  max-width: 440px;
+}
+
+.auth-marca .titulo-seccion {
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  margin: 1.75rem 0 0.75rem;
+}
+
+.auth-marca .texto-seccion {
+  max-width: 34ch;
+}
+
+/* Barras que se acortan: la deuda bajando. Decorativo. */
+.auth-barras {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 2.25rem;
+}
+
+.auth-barras span {
+  display: block;
+  height: 0.75rem;
+  border-radius: 999px;
+  background: var(--degradado-vibrante);
+}
+
+.auth-barras span:nth-child(1) { width: 100%; }
+.auth-barras span:nth-child(2) { width: 72%; }
+.auth-barras span:nth-child(3) { width: 44%; }
+.auth-barras span:nth-child(4) { width: 18%; background: var(--terracota); }
+
+.auth-container {
+  width: 100%;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 440px;
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  background: rgba(19, 31, 24, 0.82);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--marfil-suave);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--terracota-claro);
+}
+
+.back-link .icono {
+  width: 1rem;
+  height: 1rem;
+}
+
+@media (max-width: 899px) {
+  /* En celular la marca se reduce para que el formulario quede a la vista */
+  .auth-marca .texto-seccion,
+  .auth-barras {
+    display: none;
+  }
+
+  .auth-marca .titulo-seccion {
+    margin: 1.25rem 0 0;
+  }
+
+  .auth-layout .auth-marca,
+  .auth-layout .modal-card {
+    max-width: 440px;
+  }
+}
+
+@media (min-width: 900px) {
+  .auth-layout {
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 6vw, 6rem);
+  }
+
+  .auth-marca {
+    justify-self: end;
+  }
+
+  .auth-container {
+    justify-self: start;
+  }
 }
