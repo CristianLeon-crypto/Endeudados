@@ -419,7 +419,7 @@ function conectarLista(tipo) {
     try {
       await config.eliminar(id);
       estado[config.coleccion] = estado[config.coleccion].filter(function (registro) {
-        return registro.id !== id;
+        return String(registro.id) !== String(id);
       });
       renderizar();
       // La fila (y su boton) ya no existen: el foco pasa al titulo de la lista
