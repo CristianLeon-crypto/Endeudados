@@ -58,6 +58,11 @@ const _hayLocalStorage = (function () {
 // Categorias de gasto esencial
 // ---------------------------------------------------------------------------
 
+// IMPORTANTE: estos id y nombres DEBEN coincidir exactamente con las
+// categorias que se configuren en Supabase (mismo id, mismas tildes y
+// mayusculas). Si no coinciden, los gastos guardados quedan con una categoria
+// que la pantalla no reconoce y la validacion rechaza categorias validas.
+// Al conectar la base, lo ideal es leerlas de la tabla en vez de dejarlas aca.
 async function obtenerCategorias() {
   return [
     { id: 'vivienda', nombre: 'Vivienda' },

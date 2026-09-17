@@ -5,6 +5,9 @@
 // datos no hay que tocarlo, solo datos.js.
 
 // Si la página fue recargada (F5), devolver al usuario a la landing
+// TODO: comportamiento heredado (el mismo que tiene LoginRegistro/loRe.js),
+// pendiente de revision de producto. Se mantuvo a proposito en EN-4/5/6: no es
+// un descuido. Ojo que con datos reales un F5 saca al usuario de su resumen.
 if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
   window.location.replace('../index.html');
 }
