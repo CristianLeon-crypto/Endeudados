@@ -1,1 +1,411 @@
+/* Solo lo exclusivo de la pantalla de Ingresos y Gastos.
+ * Colores, secciones, botones, formularios y tarjetas vienen de shared/base.css.
+ */
 
+@media (max-width: 480px) {
+  .logo-texto {
+    display: none;
+  }
+
+  .nav-links a {
+    padding: 0.45rem 0.6rem;
+  }
+}
+
+.encabezado-seccion.izquierda {
+  margin-bottom: 2.25rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Resumen (EN-6)
+ * ------------------------------------------------------------------------- */
+
+#error-carga {
+  margin: 0 0 1.5rem;
+}
+
+.resumen-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 760px) {
+  .resumen-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.resumen-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.resumen-card .icono-circulo {
+  margin-bottom: 1rem;
+}
+
+/* En celular el icono se acomoda a la derecha para que las tres tarjetas
+ * apiladas ocupen menos alto */
+@media (max-width: 759px) {
+  .resumen-card {
+    position: relative;
+  }
+
+  .resumen-card .icono-circulo {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0;
+  }
+
+  .resumen-card .resumen-etiqueta {
+    padding-right: 3rem;
+  }
+}
+
+.icono-marfil {
+  color: var(--marfil);
+  background: var(--superficie-fuerte);
+  border-color: var(--borde);
+}
+
+.resumen-etiqueta {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--marfil-suave);
+}
+
+.tarjeta-clara .resumen-etiqueta,
+.tarjeta-clara .resumen-detalle {
+  color: var(--tinta-suave);
+}
+
+/* Los montos grandes no deben romper la tarjeta: se achican con la ventana y,
+ * si aun asi no caben, parten linea. */
+.resumen-monto {
+  font-size: clamp(1.75rem, 3.2vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.resumen-detalle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--marfil-tenue);
+}
+
+.chip-deficit {
+  display: none;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--marfil);
+  background: var(--terracota);
+  border-radius: 999px;
+}
+
+/* Disponible en negativo: monto en terracota (4.6:1 sobre marfil) y etiqueta */
+[data-estado="excedido"] .resumen-disponible .resumen-monto {
+  color: var(--terracota);
+}
+
+[data-estado="excedido"] .chip-deficit {
+  display: inline-block;
+}
+
+[data-estado="excedido"] .resumen-disponible {
+  box-shadow: var(--sombra), 0 0 0 3px var(--terracota);
+}
+
+/* Barra de progreso */
+.progreso-card {
+  margin-top: 1rem;
+}
+
+.progreso-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.progreso-valor {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.barra {
+  height: 0.9rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--borde);
+  overflow: hidden;
+}
+
+.barra-relleno {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--degradado-vibrante);
+  transition: width 0.4s ease, background 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra-relleno {
+    transition: none;
+  }
+}
+
+[data-estado="excedido"] .barra-relleno,
+[data-estado="sin-ingresos"] .barra-relleno {
+  background: linear-gradient(90deg, var(--terracota), var(--terracota-claro));
+}
+
+[data-estado="excedido"] .progreso-valor,
+[data-estado="sin-ingresos"] .progreso-valor {
+  color: var(--terracota-claro);
+}
+
+.mensaje-resumen {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  font-size: 0.925rem;
+  color: var(--marfil-suave);
+}
+
+.mensaje-resumen .icono {
+  margin-top: 0.1rem;
+}
+
+.icono-alerta {
+  display: none;
+  color: var(--terracota-claro);
+}
+
+.icono-info {
+  color: var(--marfil-suave);
+}
+
+[data-estado="excedido"] .icono-alerta,
+[data-estado="sin-ingresos"] .icono-alerta,
+[data-estado="justo"] .icono-alerta {
+  display: block;
+}
+
+[data-estado="excedido"] .icono-info,
+[data-estado="sin-ingresos"] .icono-info,
+[data-estado="justo"] .icono-info {
+  display: none;
+}
+
+[data-estado="excedido"] .mensaje-resumen,
+[data-estado="sin-ingresos"] .mensaje-resumen {
+  color: var(--terracota-claro);
+}
+
+.acciones-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Registro de ingresos y gastos (EN-4, EN-5)
+ * ------------------------------------------------------------------------- */
+
+.registro-grid {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .registro-grid {
+    grid-template-columns: 5fr 7fr;
+  }
+}
+
+.formulario-titulo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.formulario-registro .formulario-titulo {
+  margin-bottom: 1.5rem;
+}
+
+.formulario-titulo:focus {
+  outline: none;
+}
+
+/* Input de monto con el signo $ adentro */
+.campo-monto {
+  position: relative;
+}
+
+.campo-monto span {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 700;
+  color: var(--marfil-tenue);
+  pointer-events: none;
+}
+
+.form-group .campo-monto input {
+  padding-left: 2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Lista de registros */
+.lista-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--borde);
+}
+
+.lista-total {
+  font-size: 0.875rem;
+  color: var(--marfil-suave);
+}
+
+.lista-total strong {
+  margin-left: 0.35rem;
+  font-size: 1.1rem;
+  color: var(--marfil);
+  font-variant-numeric: tabular-nums;
+}
+
+.lista-registros {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.registro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--borde);
+}
+
+.registro:last-child {
+  border-bottom: none;
+}
+
+.registro-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.registro-concepto {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.registro-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--marfil-tenue);
+}
+
+.chip-categoria {
+  padding: 0.1rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--terracota-claro);
+  background: var(--terracota-fondo);
+  border-radius: 999px;
+}
+
+.registro-monto {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.btn-eliminar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  color: var(--marfil-tenue);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-eliminar:hover {
+  color: var(--terracota-claro);
+  background: var(--terracota-fondo);
+  border-color: rgba(224, 145, 95, 0.3);
+}
+
+.btn-eliminar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-eliminar .icono {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+/* En celular el monto baja debajo del concepto para no apretar el texto */
+@media (max-width: 480px) {
+  .registro {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "info eliminar"
+      "monto eliminar";
+    row-gap: 0.25rem;
+  }
+
+  .registro-info { grid-area: info; }
+  .registro-monto { grid-area: monto; }
+  .btn-eliminar { grid-area: eliminar; }
+}
+
+.lista-vacia {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  font-size: 0.925rem;
+  color: var(--marfil-tenue);
+}
