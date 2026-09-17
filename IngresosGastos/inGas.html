@@ -34,7 +34,13 @@
             <a href="#resumen">Resumen</a>
             <a href="#ingresos">Ingresos</a>
             <a href="#gastos">Gastos</a>
+            <a href="#hormiga">Hormiga</a>
+            <a href="#deudas">Deudas</a>
         </nav>
+        <p id="usuario-actual" class="chip-usuario hidden">
+            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" /></svg>
+            <span id="usuario-nombre"></span>
+        </p>
     </header>
 
     <main>
@@ -92,6 +98,22 @@
                             <svg class="icono icono-alerta" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
                             <svg class="icono icono-info" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
                             <span id="mensaje-resumen"></span>
+                        </p>
+                    </div>
+
+                    <!-- Cifras de las otras dos secciones, para no tener que bajar a buscarlas -->
+                    <div class="mini-resumen">
+                        <p class="mini-dato">
+                            <span class="mini-etiqueta">Gastos hormiga al mes</span>
+                            <strong id="mini-hormiga">$ 0</strong>
+                        </p>
+                        <p class="mini-dato">
+                            <span class="mini-etiqueta">Impacto anual</span>
+                            <strong id="mini-hormiga-anual">$ 0</strong>
+                        </p>
+                        <p class="mini-dato">
+                            <span class="mini-etiqueta">Deuda total</span>
+                            <strong id="mini-deuda">$ 0</strong>
                         </p>
                     </div>
                 </div>
@@ -211,9 +233,175 @@
             </div>
         </section>
 
+        <!-- Gastos hormiga: impacto anual = monto mensual x 12 -->
+        <section id="hormiga" class="seccion seccion-alterna" aria-labelledby="titulo-hormiga">
+            <div class="contenedor">
+                <div class="encabezado-dividido">
+                    <span class="eyebrow">Gastos hormiga</span>
+                    <div>
+                        <h2 id="titulo-hormiga" class="titulo-seccion">Lo pequeño que <span class="acento-serif">se acumula</span></h2>
+                        <p class="texto-seccion">Gastos chicos que se repiten cada mes. Aquí ves cuánto suman en un año completo.</p>
+                    </div>
+                </div>
+
+                <div class="registro-grid">
+                    <form id="form-hormiga" class="tarjeta formulario-registro" novalidate>
+                        <h3 class="formulario-titulo">Registrar gasto hormiga</h3>
+
+                        <div class="form-group">
+                            <label for="hormiga-concepto">Concepto</label>
+                            <input type="text" id="hormiga-concepto" placeholder="Ej. Café de la mañana" maxlength="60" autocomplete="off" required aria-describedby="error-hormiga-concepto">
+                            <p id="error-hormiga-concepto" class="error-campo hidden"></p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="hormiga-montoMensual">Cuánto gastas al mes (COP)</label>
+                            <div class="campo-monto">
+                                <span aria-hidden="true">$</span>
+                                <input type="text" id="hormiga-montoMensual" placeholder="190.000" inputmode="numeric" autocomplete="off" required aria-describedby="error-hormiga-montoMensual">
+                            </div>
+                            <p id="error-hormiga-montoMensual" class="error-campo hidden"></p>
+                        </div>
+
+                        <button type="submit" class="btn btn-secondary btn-full">
+                            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+                            Agregar gasto hormiga
+                        </button>
+                        <p id="error-hormiga-general" class="error-msg hidden" role="alert"></p>
+                    </form>
+
+                    <div class="tarjeta lista-card">
+                        <div class="lista-encabezado">
+                            <h3 id="titulo-lista-hormiga" class="formulario-titulo" tabindex="-1">Gastos hormiga registrados</h3>
+                            <p class="lista-total">Al mes <strong id="total-lista-hormiga">$ 0</strong></p>
+                        </div>
+
+                        <div class="tabla-scroll">
+                            <table id="tabla-hormiga" class="tabla-datos hidden">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Concepto</th>
+                                        <th scope="col" class="celda-monto">Al mes</th>
+                                        <th scope="col" class="celda-monto">En un año</th>
+                                        <th scope="col"><span class="sr-only">Acciones</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lista-hormiga"></tbody>
+                            </table>
+                        </div>
+
+                        <p id="vacio-hormiga" class="lista-vacia">Aún no registras gastos hormiga.</p>
+                        <p id="error-lista-hormiga" class="error-msg hidden" role="alert"></p>
+                        <p class="lista-nota">
+                            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
+                            <span>En un año estos gastos suman <strong id="hormiga-anual">$ 0</strong>.</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deudas: ordenadas por método avalancha (mayor tasa primero) -->
+        <section id="deudas" class="seccion" aria-labelledby="titulo-deudas">
+            <div class="contenedor">
+                <div class="encabezado-dividido">
+                    <span class="eyebrow">Deudas</span>
+                    <div>
+                        <h2 id="titulo-deudas" class="titulo-seccion">Paga primero <span class="acento-serif">la más cara</span></h2>
+                        <p class="texto-seccion">El método avalancha: abona de más a la deuda con la tasa más alta, porque es la que más intereses te cobra.</p>
+                    </div>
+                </div>
+
+                <div class="registro-grid">
+                    <form id="form-deuda" class="tarjeta formulario-registro" novalidate>
+                        <h3 class="formulario-titulo">Registrar deuda</h3>
+
+                        <div class="form-group">
+                            <label for="deuda-nombre">Nombre de la deuda</label>
+                            <input type="text" id="deuda-nombre" placeholder="Ej. Tarjeta de crédito" maxlength="60" autocomplete="off" required aria-describedby="error-deuda-nombre">
+                            <p id="error-deuda-nombre" class="error-campo hidden"></p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deuda-saldo">Saldo actual (COP)</label>
+                            <div class="campo-monto">
+                                <span aria-hidden="true">$</span>
+                                <input type="text" id="deuda-saldo" placeholder="2.400.000" inputmode="numeric" autocomplete="off" required aria-describedby="error-deuda-saldo">
+                            </div>
+                            <p id="error-deuda-saldo" class="error-campo hidden"></p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deuda-tasaEA">Tasa efectiva anual (%)</label>
+                            <div class="campo-monto campo-tasa">
+                                <span aria-hidden="true">%</span>
+                                <input type="text" id="deuda-tasaEA" placeholder="42,5" inputmode="decimal" autocomplete="off" required aria-describedby="error-deuda-tasaEA">
+                            </div>
+                            <p id="error-deuda-tasaEA" class="error-campo hidden"></p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deuda-pagoMinimo">Pago mínimo mensual (COP)</label>
+                            <div class="campo-monto">
+                                <span aria-hidden="true">$</span>
+                                <input type="text" id="deuda-pagoMinimo" placeholder="180.000" inputmode="numeric" autocomplete="off" required aria-describedby="error-deuda-pagoMinimo">
+                            </div>
+                            <p id="error-deuda-pagoMinimo" class="error-campo hidden"></p>
+                        </div>
+
+                        <button type="submit" class="btn btn-secondary btn-full">
+                            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+                            Agregar deuda
+                        </button>
+                        <p id="error-deuda-general" class="error-msg hidden" role="alert"></p>
+                    </form>
+
+                    <div class="tarjeta lista-card">
+                        <div class="lista-encabezado">
+                            <h3 id="titulo-lista-deudas" class="formulario-titulo" tabindex="-1">Tus deudas, en orden de prioridad</h3>
+                            <p class="lista-total">Saldo total <strong id="total-lista-deudas">$ 0</strong></p>
+                        </div>
+
+                        <div class="mini-resumen">
+                            <p class="mini-dato">
+                                <span class="mini-etiqueta">Pagos mínimos al mes</span>
+                                <strong id="deuda-pagos-minimos">$ 0</strong>
+                            </p>
+                            <p class="mini-dato">
+                                <span class="mini-etiqueta">Intereses estimados del mes</span>
+                                <strong id="deuda-intereses">$ 0</strong>
+                            </p>
+                        </div>
+
+                        <div class="tabla-scroll">
+                            <table id="tabla-deudas" class="tabla-datos hidden">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Deuda</th>
+                                        <th scope="col" class="celda-monto">Saldo</th>
+                                        <th scope="col" class="celda-monto">Tasa</th>
+                                        <th scope="col" class="celda-monto">Pago mínimo</th>
+                                        <th scope="col"><span class="sr-only">Acciones</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lista-deudas"></tbody>
+                            </table>
+                        </div>
+
+                        <p id="vacio-deudas" class="lista-vacia">Aún no registras deudas.</p>
+                        <p id="error-lista-deudas" class="error-msg hidden" role="alert"></p>
+                        <p class="lista-nota">
+                            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
+                            <span id="nota-avalancha">Registra tus deudas para saber cuál pagar primero.</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <!-- Plantilla de cada fila de las listas. inGas.js la clona y la llena con textContent. -->
+    <!-- Plantillas de fila. inGas.js las clona y las llena con textContent. -->
     <template id="plantilla-registro">
         <li class="registro">
             <div class="registro-info">
@@ -228,6 +416,39 @@
                 <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="m6 7 1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" /><path d="M9 7V4h6v3" /></svg>
             </button>
         </li>
+    </template>
+
+    <template id="plantilla-hormiga">
+        <tr class="registro">
+            <td data-titulo="Concepto">
+                <span class="registro-concepto"></span>
+                <span class="registro-fecha"></span>
+            </td>
+            <td data-titulo="Al mes" class="celda-monto registro-monto"></td>
+            <td data-titulo="En un año" class="celda-monto celda-destacada registro-anual"></td>
+            <td class="celda-accion">
+                <button type="button" class="btn-eliminar">
+                    <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="m6 7 1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" /><path d="M9 7V4h6v3" /></svg>
+                </button>
+            </td>
+        </tr>
+    </template>
+
+    <template id="plantilla-deuda">
+        <tr class="registro">
+            <td data-titulo="Deuda">
+                <span class="chip-prioridad"></span>
+                <span class="registro-concepto"></span>
+            </td>
+            <td data-titulo="Saldo" class="celda-monto registro-saldo"></td>
+            <td data-titulo="Tasa" class="celda-monto celda-destacada registro-tasa"></td>
+            <td data-titulo="Pago mínimo" class="celda-monto registro-pago"></td>
+            <td class="celda-accion">
+                <button type="button" class="btn-eliminar">
+                    <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="m6 7 1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" /><path d="M9 7V4h6v3" /></svg>
+                </button>
+            </td>
+        </tr>
     </template>
 
     <!-- Anuncios para lectores de pantalla (registro agregado, eliminado) -->

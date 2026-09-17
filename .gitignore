@@ -1,0 +1,7 @@
+# Capturas de referencia visual: material de consulta local, no hace parte del proyecto
+referencias/
+
+# Archivos del sistema operativo
+Thumbs.db
+desktop.ini
+.DS_Store

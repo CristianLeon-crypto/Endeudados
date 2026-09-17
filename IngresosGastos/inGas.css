@@ -2,13 +2,55 @@
  * Colores, secciones, botones, formularios y tarjetas vienen de shared/base.css.
  */
 
+/* Cinco secciones no caben en la barra de pantallas chicas: se deja arrastrar
+ * en horizontal, sin barra de scroll visible. */
+.nav-links {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-links a {
+  white-space: nowrap;
+}
+
 @media (max-width: 480px) {
   .logo-texto {
     display: none;
   }
 
   .nav-links a {
-    padding: 0.45rem 0.6rem;
+    padding: 0.45rem 0.55rem;
+  }
+}
+
+/* Usuario de la sesion */
+.chip-usuario {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  padding: 0.4rem 0.9rem 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--marfil-suave);
+  background: var(--superficie-fuerte);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+}
+
+.chip-usuario .icono {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--terracota-claro);
+}
+
+@media (max-width: 899px) {
+  .chip-usuario {
+    display: none;
   }
 }
 
@@ -310,7 +352,10 @@
   list-style: none;
 }
 
-.registro {
+/* Fila de una lista (ingresos y gastos esenciales). Las filas de las tablas
+ * de gastos hormiga y deudas tambien usan la clase .registro para el borrado,
+ * por eso estas reglas van acotadas a li. */
+li.registro {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
@@ -319,7 +364,7 @@
   border-bottom: 1px solid var(--borde);
 }
 
-.registro:last-child {
+li.registro:last-child {
   border-bottom: none;
 }
 
@@ -392,7 +437,7 @@
 
 /* En celular el monto baja debajo del concepto para no apretar el texto */
 @media (max-width: 480px) {
-  .registro {
+  li.registro {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "info eliminar"
@@ -400,9 +445,9 @@
     row-gap: 0.25rem;
   }
 
-  .registro-info { grid-area: info; }
-  .registro-monto { grid-area: monto; }
-  .btn-eliminar { grid-area: eliminar; }
+  li.registro .registro-info { grid-area: info; }
+  li.registro .registro-monto { grid-area: monto; }
+  li.registro .btn-eliminar { grid-area: eliminar; }
 }
 
 .lista-vacia {
@@ -410,4 +455,238 @@
   text-align: center;
   font-size: 0.925rem;
   color: var(--marfil-tenue);
+}
+
+/* Nota al pie de una lista (impacto anual, a cual deuda abonar primero) */
+.lista-nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--marfil-suave);
+  border-top: 1px solid var(--borde);
+}
+
+.lista-nota .icono {
+  margin-top: 0.1rem;
+  color: var(--terracota-claro);
+}
+
+.lista-nota strong {
+  color: var(--marfil);
+}
+
+/* ---------------------------------------------------------------------------
+ * Cifras breves (gastos hormiga y deudas)
+ * ------------------------------------------------------------------------- */
+
+.mini-resumen {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+}
+
+@media (min-width: 560px) {
+  .mini-resumen {
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+.mini-dato {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.mini-etiqueta {
+  font-size: 0.8rem;
+  color: var(--marfil-suave);
+}
+
+.mini-dato strong {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.lista-card .mini-resumen {
+  margin: 1rem 0 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tablas de datos (gastos hormiga y deudas)
+ * ------------------------------------------------------------------------- */
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-datos {
+  width: 100%;
+  margin-top: 0.5rem;
+  border-collapse: collapse;
+  font-size: 0.925rem;
+}
+
+.tabla-datos th {
+  padding: 0.85rem 0.75rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--marfil-suave);
+  border-bottom: 1px solid var(--borde);
+}
+
+.tabla-datos td {
+  padding: 0.9rem 0.75rem;
+  border-bottom: 1px solid var(--borde);
+  vertical-align: middle;
+}
+
+.tabla-datos tr:last-child td {
+  border-bottom: none;
+}
+
+.tabla-datos th:first-child,
+.tabla-datos td:first-child {
+  padding-left: 0;
+}
+
+.tabla-datos th:last-child,
+.tabla-datos td:last-child {
+  padding-right: 0;
+}
+
+.celda-monto {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla-datos td.celda-monto {
+  font-weight: 700;
+}
+
+/* La columna que da la razon de ser de la tabla: impacto anual y tasa */
+.tabla-datos td.celda-destacada {
+  color: var(--terracota-claro);
+}
+
+.celda-accion {
+  width: 3rem;
+  text-align: right;
+}
+
+.tabla-datos .registro-concepto {
+  display: block;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tabla-datos .registro-fecha {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--marfil-tenue);
+}
+
+.chip-prioridad {
+  display: inline-block;
+  margin-bottom: 0.3rem;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--marfil);
+  background: var(--terracota);
+  border-radius: 999px;
+}
+
+/* En celular cada fila se vuelve una tarjeta con el nombre de la columna
+ * encima de cada dato, en vez de una tabla con scroll horizontal. */
+@media (max-width: 640px) {
+  .tabla-datos thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .tabla-datos,
+  .tabla-datos tbody,
+  .tabla-datos tr,
+  .tabla-datos td {
+    display: block;
+  }
+
+  .tabla-datos tr {
+    position: relative;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .tabla-datos td,
+  .tabla-datos td:first-child,
+  .tabla-datos td:last-child {
+    padding: 0.2rem 0;
+    border: none;
+    text-align: left;
+  }
+
+  .tabla-datos td[data-titulo]:not([data-titulo="Concepto"]):not([data-titulo="Deuda"]) {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .tabla-datos td[data-titulo]::before {
+    content: attr(data-titulo);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--marfil-suave);
+  }
+
+  .tabla-datos td[data-titulo="Concepto"]::before,
+  .tabla-datos td[data-titulo="Deuda"]::before {
+    display: none;
+  }
+
+  .tabla-datos .celda-accion {
+    position: absolute;
+    top: 0.75rem;
+    right: 0;
+    width: auto;
+    padding: 0;
+  }
+
+  .tabla-datos td[data-titulo="Concepto"],
+  .tabla-datos td[data-titulo="Deuda"] {
+    padding-right: 3rem;
+  }
+}
+
+/* Campo de tasa: el simbolo % va al final, no al principio como el $ */
+.campo-tasa span {
+  left: auto;
+  right: 1rem;
+}
+
+.form-group .campo-tasa input {
+  padding-left: 1rem;
+  padding-right: 2.25rem;
+  font-variant-numeric: tabular-nums;
 }

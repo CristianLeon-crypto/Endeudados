@@ -1,49 +1,106 @@
-// Pantalla de Ingresos y Gastos (EN-4, EN-5, EN-6).
+// Pantalla de Ingresos y Gastos.
+//
+// Cubre cuatro entidades: ingresos (EN-4), gastos esenciales (EN-5), gastos
+// hormiga y deudas, mas el resumen del mes (EN-6).
 //
 // Este archivo solo maneja la pantalla: lee los formularios, valida con
-// calculos.js, guarda con datos.js y vuelve a pintar. Para conectar la base de
-// datos no hay que tocarlo, solo datos.js.
-
-// Si la página fue recargada (F5), devolver al usuario a la landing
-// TODO: comportamiento heredado (el mismo que tiene LoginRegistro/loRe.js),
-// pendiente de revision de producto. Se mantuvo a proposito en EN-4/5/6: no es
-// un descuido. Ojo que con datos reales un F5 saca al usuario de su resumen.
-if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
-  window.location.replace('../index.html');
-}
+// calculos.js, guarda con datos.js y vuelve a pintar. Nunca habla con
+// localStorage ni con Supabase; para conectar la base de datos no hay que
+// tocarlo, solo datos.js.
+//
+// Nota: antes esta pantalla devolvia a la landing cuando se recargaba con F5.
+// Se quito a proposito: al recargar el usuario se queda donde estaba.
 
 const periodo = periodoDeFecha(new Date());
 
 // Unica fuente de verdad de la pantalla. Todo lo que se ve se calcula a partir
 // de aca en renderizar(); ningun total se suma ni se resta "a mano" en el DOM.
 const estado = {
+  usuario: null,
   categorias: [],
   ingresos: [],
-  gastos: []
+  gastos: [],
+  gastosHormiga: [],
+  deudas: []
 };
 
-// Lo que cambia entre ingresos y gastos. El resto del flujo (validar, guardar,
-// pintar, eliminar) es el mismo para los dos.
+// Lo que cambia entre una entidad y otra. El resto del flujo (validar, guardar,
+// pintar, eliminar) es el mismo para las cuatro.
+//
+//   coleccion    llave dentro de `estado`
+//   dom          sufijo de los id del HTML (form-..., lista-..., vacio-...)
+//   campos       inputs del formulario, en orden; el id es `${tipo}-${campo}`
+//   camposMonto  cuales de esos campos se formatean como pesos al salir
+//   tabla        id de la tabla que se oculta cuando no hay registros (si aplica)
+//   ordenar      orden de las filas; por defecto, de la mas reciente a la mas vieja
 const tipos = {
   ingreso: {
     coleccion: 'ingresos',
+    dom: 'ingresos',
     campos: ['concepto', 'monto'],
+    camposMonto: ['monto'],
     validar: function (entrada) { return validarIngreso(entrada); },
-    crear: crearIngreso,
+    agregar: agregarIngreso,
     eliminar: eliminarIngreso,
+    plantilla: 'plantilla-registro',
+    llenarFila: llenarFilaMovimiento,
+    etiqueta: function (registro) { return registro.concepto; },
+    total: function (registros) { return formatearPesos(sumarMontos(registros)); },
     singular: 'ingreso',
     textoAgregado: 'Ingreso agregado. Ingresos del mes:',
     textoEliminado: 'Ingreso eliminado.'
   },
   gasto: {
     coleccion: 'gastos',
+    dom: 'gastos',
     campos: ['concepto', 'categoria', 'monto'],
+    camposMonto: ['monto'],
     validar: function (entrada) { return validarGasto(entrada, estado.categorias); },
-    crear: crearGasto,
+    agregar: agregarGasto,
     eliminar: eliminarGasto,
+    plantilla: 'plantilla-registro',
+    llenarFila: llenarFilaMovimiento,
+    etiqueta: function (registro) { return registro.concepto; },
+    total: function (registros) { return formatearPesos(sumarMontos(registros)); },
     singular: 'gasto',
     textoAgregado: 'Gasto agregado. Gastos esenciales del mes:',
     textoEliminado: 'Gasto eliminado.'
+  },
+  hormiga: {
+    coleccion: 'gastosHormiga',
+    dom: 'hormiga',
+    tabla: 'tabla-hormiga',
+    campos: ['concepto', 'montoMensual'],
+    camposMonto: ['montoMensual'],
+    validar: function (entrada) { return validarGastoHormiga(entrada); },
+    agregar: agregarGastoHormiga,
+    eliminar: eliminarGastoHormiga,
+    plantilla: 'plantilla-hormiga',
+    llenarFila: llenarFilaHormiga,
+    etiqueta: function (registro) { return registro.concepto; },
+    total: function (registros) { return formatearPesos(calcularResumenHormiga(registros).totalMensual); },
+    singular: 'gasto hormiga',
+    textoAgregado: 'Gasto hormiga agregado. Al mes suman:',
+    textoEliminado: 'Gasto hormiga eliminado.'
+  },
+  deuda: {
+    coleccion: 'deudas',
+    dom: 'deudas',
+    tabla: 'tabla-deudas',
+    campos: ['nombre', 'saldo', 'tasaEA', 'pagoMinimo'],
+    camposMonto: ['saldo', 'pagoMinimo'],
+    validar: function (entrada) { return validarDeuda(entrada); },
+    agregar: agregarDeuda,
+    eliminar: eliminarDeuda,
+    plantilla: 'plantilla-deuda',
+    llenarFila: llenarFilaDeuda,
+    // Metodo avalancha: la de mayor tasa primero
+    ordenar: ordenarPorAvalancha,
+    etiqueta: function (registro) { return registro.nombre; },
+    total: function (registros) { return formatearPesos(calcularResumenDeudas(registros).saldoTotal); },
+    singular: 'deuda',
+    textoAgregado: 'Deuda agregada. Saldo total:',
+    textoEliminado: 'Deuda eliminada.'
   }
 };
 
@@ -96,14 +153,19 @@ function textoCantidad(cantidad, singular, plural) {
   return `${cantidad} ${cantidad === 1 ? singular : plural}`;
 }
 
+function fechaCorta(fecha) {
+  return new Date(fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+}
+
 // ---------------------------------------------------------------------------
 // Pintar
 // ---------------------------------------------------------------------------
 
 function renderizar() {
   renderizarResumen();
-  renderizarLista('ingreso');
-  renderizarLista('gasto');
+  Object.keys(tipos).forEach(renderizarLista);
+  renderizarResumenHormiga();
+  renderizarResumenDeudas();
 }
 
 function renderizarResumen() {
@@ -139,32 +201,66 @@ function renderizarResumen() {
   porId('barra-relleno').style.width = `${relleno}%`;
 }
 
+function renderizarResumenHormiga() {
+  const resumen = calcularResumenHormiga(estado.gastosHormiga);
+
+  porId('mini-hormiga').textContent = formatearPesos(resumen.totalMensual);
+  porId('mini-hormiga-anual').textContent = formatearPesos(resumen.impactoAnual);
+  porId('hormiga-anual').textContent = formatearPesos(resumen.impactoAnual);
+}
+
+function renderizarResumenDeudas() {
+  const resumen = calcularResumenDeudas(estado.deudas);
+
+  porId('mini-deuda').textContent = formatearPesos(resumen.saldoTotal);
+  porId('deuda-pagos-minimos').textContent = formatearPesos(resumen.pagoMinimoTotal);
+  porId('deuda-intereses').textContent = formatearPesos(resumen.interesMensual);
+
+  porId('nota-avalancha').textContent = resumen.prioridad
+    ? `Abona lo que puedas a "${resumen.prioridad.nombre}" (${formatearTasa(resumen.prioridad.tasaEA)}): es la que más intereses te cobra.`
+    : 'Registra tus deudas para saber cuál pagar primero.';
+}
+
 function renderizarLista(tipo) {
   const config = tipos[tipo];
-  const registros = estado[config.coleccion].slice().sort(function (a, b) {
-    return new Date(b.fecha) - new Date(a.fecha);
-  });
+  const guardados = estado[config.coleccion];
 
-  const lista = porId(`lista-${config.coleccion}`);
-  lista.replaceChildren.apply(lista, registros.map(function (registro) {
-    return crearFila(tipo, registro);
+  const registros = config.ordenar
+    ? config.ordenar(guardados)
+    : guardados.slice().sort(function (a, b) { return new Date(b.fecha) - new Date(a.fecha); });
+
+  const filas = porId(`lista-${config.dom}`);
+  filas.replaceChildren.apply(filas, registros.map(function (registro, indice) {
+    return crearFila(tipo, registro, indice);
   }));
 
-  lista.classList.toggle('hidden', registros.length === 0);
-  porId(`vacio-${config.coleccion}`).classList.toggle('hidden', registros.length > 0);
-  porId(`total-lista-${config.coleccion}`).textContent = formatearPesos(sumarMontos(registros));
+  // En las tablas se esconde la tabla entera, para que no quede un encabezado
+  // de columnas suelto cuando no hay filas.
+  porId(config.tabla || `lista-${config.dom}`).classList.toggle('hidden', registros.length === 0);
+  porId(`vacio-${config.dom}`).classList.toggle('hidden', registros.length > 0);
+  porId(`total-lista-${config.dom}`).textContent = config.total(registros);
+}
+
+function crearFila(tipo, registro, indice) {
+  const config = tipos[tipo];
+  const fila = porId(config.plantilla).content.firstElementChild.cloneNode(true);
+
+  fila.dataset.id = registro.id;
+  config.llenarFila(fila, registro, indice);
+  fila.querySelector('.btn-eliminar')
+    .setAttribute('aria-label', `Eliminar ${config.singular}: ${config.etiqueta(registro)}`);
+
+  return fila;
 }
 
 // Todo el texto que escribe el usuario entra con textContent, nunca con
 // innerHTML, para que un concepto como "<img onerror=...>" no se ejecute.
-function crearFila(tipo, registro) {
-  const fila = porId('plantilla-registro').content.firstElementChild.cloneNode(true);
+// Esto vale para las tres funciones de abajo.
 
-  fila.dataset.id = registro.id;
+function llenarFilaMovimiento(fila, registro) {
   fila.querySelector('.registro-concepto').textContent = registro.concepto;
   fila.querySelector('.registro-monto').textContent = formatearPesos(registro.monto);
-  fila.querySelector('.registro-fecha').textContent = new Date(registro.fecha)
-    .toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+  fila.querySelector('.registro-fecha').textContent = fechaCorta(registro.fecha);
 
   const chip = fila.querySelector('.chip-categoria');
   if (registro.categoria) {
@@ -172,11 +268,28 @@ function crearFila(tipo, registro) {
   } else {
     chip.remove();
   }
+}
 
-  fila.querySelector('.btn-eliminar')
-    .setAttribute('aria-label', `Eliminar ${tipos[tipo].singular}: ${registro.concepto}`);
+function llenarFilaHormiga(fila, registro) {
+  fila.querySelector('.registro-concepto').textContent = registro.concepto;
+  fila.querySelector('.registro-fecha').textContent = fechaCorta(registro.fecha);
+  fila.querySelector('.registro-monto').textContent = formatearPesos(registro.montoMensual);
+  fila.querySelector('.registro-anual').textContent = formatearPesos(calcularImpactoAnual(registro.montoMensual));
+}
 
-  return fila;
+function llenarFilaDeuda(fila, registro, indice) {
+  fila.querySelector('.registro-concepto').textContent = registro.nombre;
+  fila.querySelector('.registro-saldo').textContent = formatearPesos(registro.saldo);
+  fila.querySelector('.registro-tasa').textContent = formatearTasa(registro.tasaEA);
+  fila.querySelector('.registro-pago').textContent = formatearPesos(registro.pagoMinimo);
+
+  // La lista ya viene ordenada por avalancha: la primera es la prioritaria
+  const chip = fila.querySelector('.chip-prioridad');
+  if (indice === 0) {
+    chip.textContent = 'Paga primero';
+  } else {
+    chip.remove();
+  }
 }
 
 function nombreCategoria(id) {
@@ -192,6 +305,11 @@ function llenarCategorias() {
     opcion.textContent = categoria.nombre;
     select.appendChild(opcion);
   });
+}
+
+function mostrarUsuario(usuario) {
+  porId('usuario-nombre').textContent = usuario.nombre;
+  porId('usuario-actual').classList.remove('hidden');
 }
 
 // ---------------------------------------------------------------------------
@@ -213,14 +331,16 @@ function conectarFormulario(tipo) {
   const form = porId(`form-${tipo}`);
   const boton = form.querySelector('button[type="submit"]');
   const errorGeneral = porId(`error-${tipo}-general`);
-  const inputMonto = porId(`${tipo}-monto`);
 
   // Al salir del campo el monto se muestra con puntos de miles: 1500000 -> 1.500.000
-  inputMonto.addEventListener('blur', function () {
-    const monto = parsearMonto(inputMonto.value);
-    if (monto > 0) {
-      inputMonto.value = formatearMiles(monto);
-    }
+  config.camposMonto.forEach(function (campo) {
+    const input = porId(`${tipo}-${campo}`);
+    input.addEventListener('blur', function () {
+      const monto = parsearMonto(input.value);
+      if (monto > 0) {
+        input.value = formatearMiles(monto);
+      }
+    });
   });
 
   // El error de un campo desaparece apenas el usuario empieza a corregirlo
@@ -260,12 +380,12 @@ function conectarFormulario(tipo) {
     boton.disabled = true;
 
     try {
-      const registro = await config.crear(resultado.datos);
+      const registro = await config.agregar(resultado.datos);
       estado[config.coleccion].push(registro);
       renderizar();
       form.reset();
-      porId(`${tipo}-concepto`).focus();
-      anunciar(`${config.textoAgregado} ${formatearPesos(sumarMontos(estado[config.coleccion]))}.`);
+      porId(`${tipo}-${config.campos[0]}`).focus();
+      anunciar(`${config.textoAgregado} ${config.total(estado[config.coleccion])}.`);
     } catch (error) {
       mostrar(errorGeneral, 'No se pudo guardar el registro. Intenta nuevamente.');
       console.error(error);
@@ -281,12 +401,12 @@ function conectarFormulario(tipo) {
 
 function conectarLista(tipo) {
   const config = tipos[tipo];
-  const lista = porId(`lista-${config.coleccion}`);
-  const errorLista = porId(`error-lista-${config.coleccion}`);
+  const contenedor = porId(`lista-${config.dom}`);
+  const errorLista = porId(`error-lista-${config.dom}`);
 
   // Un solo listener para toda la lista, porque las filas se vuelven a crear
   // cada vez que se pinta.
-  lista.addEventListener('click', async function (event) {
+  contenedor.addEventListener('click', async function (event) {
     const boton = event.target.closest('.btn-eliminar');
     if (!boton) {
       return;
@@ -303,7 +423,7 @@ function conectarLista(tipo) {
       });
       renderizar();
       // La fila (y su boton) ya no existen: el foco pasa al titulo de la lista
-      porId(`titulo-lista-${config.coleccion}`).focus();
+      porId(`titulo-lista-${config.dom}`).focus();
       anunciar(config.textoEliminado);
     } catch (error) {
       boton.disabled = false;
@@ -317,13 +437,48 @@ function conectarLista(tipo) {
 // Inicio
 // ---------------------------------------------------------------------------
 
+// Guardia de sesion. Hoy getUsuarioActual() devuelve un usuario simulado y se
+// entra directo; cuando devuelva la sesion real de Supabase, sin sesion se
+// redirige al login. Si la consulta falla no se redirige: se muestra el error,
+// para no dejar al usuario rebotando entre pantallas.
+async function verificarSesion() {
+  const usuario = await getUsuarioActual();
+
+  if (!usuario) {
+    window.location.replace('../LoginRegistro/loRe.html');
+    return null;
+  }
+
+  estado.usuario = usuario;
+  mostrarUsuario(usuario);
+  return usuario;
+}
+
+async function cargarDatos() {
+  const [categorias, ingresos, gastos, gastosHormiga, deudas] = await Promise.all([
+    obtenerCategorias(),
+    obtenerIngresos(periodo),
+    obtenerGastos(periodo),
+    obtenerGastosHormiga(periodo),
+    obtenerDeudas()
+  ]);
+
+  estado.categorias = categorias;
+  estado.ingresos = ingresos;
+  estado.gastos = gastos;
+  estado.gastosHormiga = gastosHormiga;
+  estado.deudas = deudas;
+
+  llenarCategorias();
+}
+
 async function iniciar() {
   porId('periodo-nombre').textContent = nombreDelPeriodo(periodo);
 
-  conectarFormulario('ingreso');
-  conectarFormulario('gasto');
-  conectarLista('ingreso');
-  conectarLista('gasto');
+  Object.keys(tipos).forEach(function (tipo) {
+    conectarFormulario(tipo);
+    conectarLista(tipo);
+  });
 
   // Mientras llegan los datos se muestra todo en cero y no se deja enviar nada,
   // para que un registro nuevo no se pierda cuando termine la carga.
@@ -332,17 +487,12 @@ async function iniciar() {
   renderizar();
 
   try {
-    const [categorias, ingresos, gastos] = await Promise.all([
-      obtenerCategorias(),
-      obtenerIngresos(periodo),
-      obtenerGastos(periodo)
-    ]);
+    const usuario = await verificarSesion();
+    if (!usuario) {
+      return;
+    }
 
-    estado.categorias = categorias;
-    estado.ingresos = ingresos;
-    estado.gastos = gastos;
-
-    llenarCategorias();
+    await cargarDatos();
     renderizar();
     botonesEnviar.forEach(function (boton) { boton.disabled = false; });
   } catch (error) {
