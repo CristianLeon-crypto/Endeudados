@@ -5,6 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Endeudados - Recuperar Contraseña</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="../shared/base.css">
   <link rel="stylesheet" href="recPass.css">
   <!-- SDK oficial de Supabase -->
@@ -13,68 +16,98 @@
 
 <body class="auth-page">
 
-  <div class="modal-card auth-container">
-    <a href="../LoginRegistro/loRe.html" class="back-link">← Volver a iniciar sesión</a>
+  <main class="seccion auth-layout">
 
-    <!-- Estado 1: pedir el correo -->
-    <section id="paso-solicitar">
-      <h1 class="rec-titulo">¿Olvidaste tu contraseña?</h1>
-      <p class="rec-ayuda">
-        Escribe el correo con el que te registraste y te enviamos un enlace para
-        crear una nueva.
-      </p>
+    <!-- Marca (decorativa) -->
+    <aside class="auth-marca">
+      <a href="../index.html" class="logo">
+        <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
+          <defs>
+            <linearGradient id="logo-degradado" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#1C1C1C" />
+              <stop offset="1" stop-color="#28B660" />
+            </linearGradient>
+          </defs>
+          <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#logo-degradado)" stroke="#F3ECDE" stroke-opacity="0.18" />
+          <rect x="9" y="11" width="22" height="4" rx="2" fill="#F3ECDE" />
+          <rect x="9" y="18" width="15" height="4" rx="2" fill="#F3ECDE" />
+          <rect x="9" y="25" width="8" height="4" rx="2" fill="#A9501C" />
+        </svg>
+        <span>Endeudados</span>
+      </a>
+      <p class="titulo-seccion">Recupera el acceso <span class="acento-serif">sin perder nada</span>.</p>
+      <p class="texto-seccion">Tus ingresos y gastos siguen guardados. Solo necesitas una contraseña nueva para volver a entrar.</p>
+      <div class="auth-barras" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </aside>
 
-      <form id="form-solicitar">
-        <div class="form-group">
-          <label for="rec-email">Correo Electrónico</label>
-          <input type="email" id="rec-email" placeholder="tu@correo.com" required>
-        </div>
+    <div class="modal-card auth-container">
+      <a href="../LoginRegistro/loRe.html" class="back-link">
+        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg>
+        Volver a iniciar sesión
+      </a>
 
-        <button type="submit" id="btn-solicitar" class="btn btn-primary btn-full">
-          Enviarme el enlace
+      <!-- Estado 1: pedir el correo -->
+      <section id="paso-solicitar">
+        <h1 class="rec-titulo">¿Olvidaste tu contraseña?</h1>
+        <p class="rec-ayuda">
+          Escribe el correo con el que te registraste y te enviamos un enlace para
+          crear una nueva.
+        </p>
+
+        <form id="form-solicitar">
+          <div class="form-group">
+            <label for="rec-email">Correo Electrónico</label>
+            <input type="email" id="rec-email" placeholder="tu@correo.com" required>
+          </div>
+
+          <button type="submit" id="btn-solicitar" class="btn btn-primary btn-full">
+            Enviarme el enlace
+          </button>
+
+          <p id="solicitar-error" class="error-msg hidden"></p>
+          <p id="solicitar-ok" class="success-msg hidden"></p>
+        </form>
+      </section>
+
+      <!-- Estado 2: escribir la nueva contraseña (se llega desde el correo) -->
+      <section id="paso-nueva" class="hidden">
+        <h1 class="rec-titulo">Crea tu nueva contraseña</h1>
+        <p class="rec-ayuda">Debe tener al menos 6 caracteres.</p>
+
+        <form id="form-nueva">
+          <div class="form-group">
+            <label for="rec-password">Nueva contraseña</label>
+            <input type="password" id="rec-password" placeholder="••••••••" minlength="6" required>
+          </div>
+
+          <div class="form-group">
+            <label for="rec-password2">Confirma la contraseña</label>
+            <input type="password" id="rec-password2" placeholder="••••••••" minlength="6" required>
+          </div>
+
+          <button type="submit" id="btn-nueva" class="btn btn-primary btn-full">
+            Guardar contraseña
+          </button>
+
+          <p id="nueva-error" class="error-msg hidden"></p>
+          <p id="nueva-ok" class="success-msg hidden"></p>
+        </form>
+      </section>
+
+      <!-- Estado 3: el enlace no sirve (vencido o ya usado) -->
+      <section id="paso-invalido" class="hidden">
+        <h1 class="rec-titulo">Ese enlace ya no sirve</h1>
+        <p class="rec-ayuda" id="invalido-detalle">
+          Los enlaces de recuperación vencen. Pide uno nuevo y úsalo enseguida.
+        </p>
+        <button type="button" id="btn-reintentar" class="btn btn-primary btn-full">
+          Pedir un enlace nuevo
         </button>
-
-        <p id="solicitar-error" class="error-msg hidden"></p>
-        <p id="solicitar-ok" class="success-msg hidden"></p>
-      </form>
-    </section>
-
-    <!-- Estado 2: escribir la nueva contraseña (se llega desde el correo) -->
-    <section id="paso-nueva" class="hidden">
-      <h1 class="rec-titulo">Crea tu nueva contraseña</h1>
-      <p class="rec-ayuda">Debe tener al menos 6 caracteres.</p>
-
-      <form id="form-nueva">
-        <div class="form-group">
-          <label for="rec-password">Nueva contraseña</label>
-          <input type="password" id="rec-password" placeholder="••••••••" minlength="6" required>
-        </div>
-
-        <div class="form-group">
-          <label for="rec-password2">Confirma la contraseña</label>
-          <input type="password" id="rec-password2" placeholder="••••••••" minlength="6" required>
-        </div>
-
-        <button type="submit" id="btn-nueva" class="btn btn-primary btn-full">
-          Guardar contraseña
-        </button>
-
-        <p id="nueva-error" class="error-msg hidden"></p>
-        <p id="nueva-ok" class="success-msg hidden"></p>
-      </form>
-    </section>
-
-    <!-- Estado 3: el enlace no sirve (vencido o ya usado) -->
-    <section id="paso-invalido" class="hidden">
-      <h1 class="rec-titulo">Ese enlace ya no sirve</h1>
-      <p class="rec-ayuda" id="invalido-detalle">
-        Los enlaces de recuperación vencen. Pide uno nuevo y úsalo enseguida.
-      </p>
-      <button type="button" id="btn-reintentar" class="btn btn-primary btn-full">
-        Pedir un enlace nuevo
-      </button>
-    </section>
-  </div>
+      </section>
+    </div>
+  </main>
 
   <script src="../shared/supabase.js"></script>
   <script src="recPass.js"></script>

@@ -3,14 +3,17 @@
  */
 
 .rec-titulo {
-  font-size: 1.25rem;
-  margin: 0 0 0.5rem;
-  color: var(--texto);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0 0 0.6rem;
+  color: var(--marfil);
 }
 
 .rec-ayuda {
-  font-size: 0.9rem;
-  color: var(--texto-tenue);
+  font-size: 0.925rem;
+  color: var(--marfil-suave);
   margin: 0 0 1.5rem;
-  line-height: 1.45;
+  line-height: 1.5;
 }
