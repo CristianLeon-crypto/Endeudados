@@ -28,7 +28,9 @@ formRegistro.addEventListener('submit', async function (event) {
   ocultarError(regSuccess);
 
   const nombre = document.getElementById('reg-nombre').value.trim();
-  const cedula = document.getElementById('reg-cedula').value.trim();
+  // En Colombia la cédula se escribe con puntos (1.020.304.050). Se dejan solo
+  // los dígitos antes de mandarla.
+  const cedula = document.getElementById('reg-cedula').value.replace(/\D/g, '');
   const email = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-password').value;
 
@@ -37,77 +39,55 @@ formRegistro.addEventListener('submit', async function (event) {
     return;
   }
 
+  if (cedula.length < 6 || cedula.length > 10) {
+    mostrarError(regError, 'La cédula debe tener entre 6 y 10 dígitos.');
+    return;
+  }
+
   try {
-    // Verificar que la cédula no esté registrada previamente
-    const { data: cedulaExistente, error: cedulaError } = await client
-      .from('usuarios')
-      .select('cedula')
-      .eq('cedula', cedula)
-      .maybeSingle();
-
-    if (cedulaError) {
-      mostrarError(
-        regError,
-        'No se pudo validar la cédula. Intenta nuevamente.'
-      );
-      return;
-    }
-
-    if (cedulaExistente) {
-      mostrarError(
-        regError,
-        'Ya existe una cuenta registrada con este número de cédula.'
-      );
-      return;
-    }
-
-    // Crear usuario en Supabase Authentication
+    // Un solo paso. Nombre y cédula viajan dentro del signUp y el perfil en
+    // public.usuarios lo crea un trigger en la base de datos (EN-24, EN-25).
+    //
+    // Antes este archivo hacía un select y un insert sobre usuarios. Los dos
+    // salían sin sesión, porque signUp no devuelve sesión mientras el correo no
+    // esté confirmado, y RLS los rechazaba: el select devolvía lista vacía y el
+    // insert fallaba. El trigger corre dentro de Postgres y no necesita sesión.
     const { data: authData, error: authError } =
       await client.auth.signUp({
         email: email,
-        password: password
+        password: password,
+        options: {
+          data: { nombre: nombre, cedula: cedula },
+          // El enlace del correo vuelve a donde el usuario se registró:
+          // Live Server, preview de Vercel o producción.
+          emailRedirectTo: `${window.location.origin}/LoginRegistro/loRe.html`
+        }
       });
 
     if (authError) {
-      mostrarError(regError, authError.message);
-      return;
-    }
-
-    const usuarioAuth = authData.user;
-
-    if (!usuarioAuth) {
-      mostrarError(
-        regError,
-        'No se pudo crear el usuario en Supabase.'
-      );
-      return;
-    }
-
-    // Guardar los datos personales en la tabla usuarios
-    const { error: datosError } = await client
-      .from('usuarios')
-      .insert([
-        {
-          auth_id: usuarioAuth.id,
-          nombre: nombre,
-          cedula: cedula,
-          email: email
-        }
-      ]);
-
-    if (datosError) {
-      if (datosError.code === '23505') {
+      if (authError.status === 429) {
         mostrarError(
           regError,
-          'Ya existe una cuenta registrada con este número de cédula.'
+          'Se enviaron demasiados correos en poco tiempo. Espera unos minutos e intenta de nuevo.'
+        );
+      } else if (authError.status >= 500) {
+        // El trigger rechazó el registro: cédula ya registrada o datos
+        // inválidos. A propósito no se dice cuál de los dos: confirmar que una
+        // cédula existe le permitiría a cualquiera averiguar quién está
+        // registrado en la plataforma.
+        mostrarError(
+          regError,
+          'No se pudo crear la cuenta. Revisa que la cédula y el correo sean correctos y no estén registrados.'
         );
       } else {
-        mostrarError(
-          regError,
-          'La cuenta fue creada, pero no se pudieron guardar tus datos: ' +
-          datosError.message
-        );
+        mostrarError(regError, 'No se pudo crear la cuenta: ' + authError.message);
       }
+      console.error(authError);
+      return;
+    }
+
+    if (!authData.user) {
+      mostrarError(regError, 'No se pudo crear la cuenta. Intenta nuevamente.');
       return;
     }
 
