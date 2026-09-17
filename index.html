@@ -1,213 +1,277 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="snap-secciones">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Endeudados - Control de Finanzas Personales</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="shared/base.css">
   <link rel="stylesheet" href="index.css">
 </head>
 <body>
 
   <!-- Barra de navegación superior -->
   <header class="navbar">
-    <div class="logo">
-      <span class="logo-icon">💰</span>
-      <span class="logo-text">Endeudados</span>
-    </div>
-    <nav class="nav-links">
+    <a href="#inicio" class="logo">
+      <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
+        <defs>
+          <linearGradient id="logo-degradado" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#1C1C1C" />
+            <stop offset="1" stop-color="#28B660" />
+          </linearGradient>
+        </defs>
+        <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#logo-degradado)" stroke="#F3ECDE" stroke-opacity="0.18" />
+        <rect x="9" y="11" width="22" height="4" rx="2" fill="#F3ECDE" />
+        <rect x="9" y="18" width="15" height="4" rx="2" fill="#F3ECDE" />
+        <rect x="9" y="25" width="8" height="4" rx="2" fill="#A9501C" />
+      </svg>
+      <span class="logo-texto">Endeudados</span>
+    </a>
+    <nav class="nav-links" aria-label="Secciones">
       <a href="#problema">El Problema</a>
       <a href="#gastos-hormiga">Gastos Hormiga</a>
       <a href="#simulador">Simulador</a>
       <a href="#seguridad">Privacidad</a>
     </nav>
     <div class="nav-buttons">
-      <a href="LoginRegistro/loRe.html" class="btn btn-secondary">Iniciar Sesión</a>
+      <a href="LoginRegistro/loRe.html" class="btn btn-ghost">Iniciar Sesión</a>
       <a href="LoginRegistro/loRe.html" class="btn btn-primary">Crear Cuenta</a>
     </div>
   </header>
 
-  <!-- Hero / Pantalla de bienvenida -->
-  <main class="hero-section">
-    <div class="hero-content">
-      <span class="badge">Jóvenes de 22 a 28 años en su primer empleo</span>
-      <h1>Toma el control real de tus <span class="highlight">ingresos y deudas</span></h1>
-      <p>En Colombia, el 70% de los primeros créditos son de menores de 28 años, pero solo representan el 18,1% del saldo total de la deuda. Registra tus ingresos y gastos del mes y sabe exactamente cuánto dinero tienes disponible.</p>
+  <main>
 
-      <div class="hero-actions">
-        <a href="LoginRegistro/loRe.html" class="btn btn-primary btn-large">Comenzar ahora gratis</a>
-        <a href="#simulador" class="btn btn-outline btn-large">Probar simulador de deuda</a>
+    <!-- Hero / Pantalla de bienvenida -->
+    <section id="inicio" class="seccion hero-section">
+      <div class="contenedor hero-grid">
+        <div class="hero-content">
+          <span class="badge">Jóvenes de 22 a 28 años en su primer empleo</span>
+          <h1 class="hero-titulo">Toma el control real de tus <span class="acento-serif">ingresos y deudas</span></h1>
+          <p class="texto-seccion">En Colombia, el 70% de los primeros créditos son de menores de 28 años, pero solo representan el 18,1% del saldo total de la deuda. Registra tus ingresos y gastos del mes y sabe exactamente cuánto dinero tienes disponible.</p>
+
+          <div class="hero-actions">
+            <a href="LoginRegistro/loRe.html" class="btn btn-primary btn-large">Comenzar ahora gratis</a>
+            <a href="#simulador" class="btn btn-secondary btn-large">Probar simulador de deuda</a>
+          </div>
+
+          <ul class="features-preview">
+            <li class="feature-item">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="11" r="2" /><path d="M6.5 16c.6-1.3 1.5-2 2.5-2s1.9.7 2.5 2" /><path d="M14.5 10h4" /><path d="M14.5 13.5h3" /></svg>
+              <span>Identificación única por cédula</span>
+            </li>
+            <li class="feature-item">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17 6-6 4 4 8-8" /><path d="M15 7h6v6" /></svg>
+              <span>Balance mensual automático</span>
+            </li>
+            <li class="feature-item">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+              <span>Datos 100% seguros y privados</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Ilustración: vista previa del resumen mensual (datos de ejemplo) -->
+        <div class="hero-visual" aria-hidden="true">
+          <div class="hero-orbe"></div>
+          <div class="vista-previa tarjeta tarjeta-clara">
+            <span class="vista-previa-etiqueta">Ejemplo de resumen</span>
+            <span class="vista-previa-titulo">Disponible este mes</span>
+            <span class="vista-previa-monto">$ 1.240.000</span>
+            <div class="vista-previa-barra"><span style="width: 62%"></span></div>
+            <div class="vista-previa-filas">
+              <span>Ingresos</span><strong>$ 3.260.000</strong>
+              <span>Gastos esenciales</span><strong>$ 2.020.000</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+      <a href="#cifras" class="indicador-scroll" aria-label="Ir a la siguiente sección">
+        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </a>
+    </section>
+
+    <!-- Estadísticas de contexto -->
+    <section id="cifras" class="seccion seccion-alterna stats-section">
+      <div class="contenedor">
+        <div class="encabezado-seccion">
+          <span class="eyebrow">En cifras</span>
+          <h2 class="titulo-seccion">El primer crédito llega <span class="acento-serif">temprano</span></h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-num">70%</span>
+            <span class="stat-label">De los primeros créditos en Colombia son de menores de 28 años (DataCrédito Experian)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num terracota">44,1%</span>
+            <span class="stat-label">De los deudores en mora incumplen por gastar más de lo que perciben (Bravo, 2026)</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num">118.000</span>
+            <span class="stat-label">Colombianos acceden por primera vez al crédito cada mes</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num terracota">23,73% - 63,83%</span>
+            <span class="stat-label">Rango de tasa efectiva anual en productos de bajo monto</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- El Problema: Puntos Ciegos -->
+    <section id="problema" class="seccion">
+      <div class="contenedor">
+        <div class="encabezado-seccion">
+          <span class="eyebrow">Diagnóstico</span>
+          <h2 class="titulo-seccion">Los 3 puntos ciegos del <span class="acento-serif">sobreendeudamiento</span></h2>
+          <p class="texto-seccion">Cuando un recién graduado adquiere tarjetas, créditos de libre inversión, Icetex y microcréditos digitales a la vez, pierde de vista tres cosas clave.</p>
+        </div>
+
+        <div class="cards-grid">
+          <div class="info-card tarjeta">
+            <span class="card-number">01</span>
+            <h3>Dinero disponible real</h3>
+            <p>No logran identificar cuánto tienen disponible después de cubrir vivienda, alimentación y transporte.</p>
+          </div>
+          <div class="info-card tarjeta tarjeta-clara">
+            <span class="card-number">02</span>
+            <h3>Prioridad de pago</h3>
+            <p>No saben qué deudas pagar primero frente a tasas que van del 23,73% al 63,83% efectivo anual.</p>
+          </div>
+          <div class="info-card tarjeta">
+            <span class="card-number">03</span>
+            <h3>Decisiones concretas</h3>
+            <p>No tienen claridad sobre qué acciones tomar para recuperar su estabilidad sin sacrificar lo esencial.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gastos Hormiga -->
+    <section id="gastos-hormiga" class="seccion seccion-alterna">
+      <div class="contenedor">
+        <div class="encabezado-seccion">
+          <span class="eyebrow">Fugas invisibles</span>
+          <h2 class="titulo-seccion">Los gastos hormiga que <span class="acento-serif">drenan tu sueldo</span></h2>
+          <p class="texto-seccion">Registrar tus gastos del mes te permite verlos antes de que se conviertan en deuda.</p>
+        </div>
+
+        <div class="table-wrapper tarjeta">
+          <table class="hormiga-table">
+            <thead>
+              <tr>
+                <th scope="col">Gasto frecuente</th>
+                <th scope="col">Costo mensual aprox.</th>
+                <th scope="col">Impacto anual</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Café / domicilios diarios</td>
+                <td>$180.000 - $260.000</td>
+                <td>$2.160.000 - $3.120.000</td>
+              </tr>
+              <tr>
+                <td>Suscripciones olvidadas</td>
+                <td>$95.000</td>
+                <td>$1.140.000</td>
+              </tr>
+              <tr>
+                <td>Transporte por app en trayectos cortos</td>
+                <td>$110.000</td>
+                <td>$1.320.000</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Simulador -->
+    <section id="simulador" class="seccion">
+      <div class="contenedor">
+        <div class="encabezado-seccion">
+          <span class="eyebrow">Método Avalancha</span>
+          <h2 class="titulo-seccion">¿Qué pasa si abonas <span class="acento-serif">un extra mensual</span>?</h2>
+          <p class="texto-seccion">Simula el efecto de destinar un abono adicional a tu deuda con mayor tasa de interés.</p>
+        </div>
+
+        <div class="simulator-card tarjeta">
+          <div class="simulator-control">
+            <label for="abono-extra">Abono mensual adicional a capital</label>
+            <span id="abono-valor" class="simulator-value">$0 COP/mes</span>
+            <input type="range" id="abono-extra" min="0" max="400000" step="25000" value="0">
+          </div>
+
+          <div class="simulator-results">
+            <div class="result-box">
+              <span class="result-label">Tiempo estimado para salir de deuda</span>
+              <span id="resultado-meses" class="result-value">24 meses</span>
+            </div>
+            <div class="result-box tarjeta-clara">
+              <span class="result-label">Ahorro estimado en intereses (12 meses)</span>
+              <span id="resultado-ahorro" class="result-value">$0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacidad -->
+    <section id="seguridad" class="seccion seccion-alterna">
+      <div class="contenedor">
+        <div class="encabezado-seccion">
+          <span class="eyebrow">Marco legal colombiano</span>
+          <h2 class="titulo-seccion">Tus datos, <span class="acento-serif">protegidos por ley</span></h2>
+          <p class="texto-seccion">Cumplimos con la Ley 1581 de 2012 (protección de datos) y la Ley 1266 de 2008 (Habeas Data Financiero).</p>
+        </div>
+
+        <div class="cards-grid">
+          <div class="info-card tarjeta">
+            <span class="icono-circulo">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+            </span>
+            <h3>Cifrado y minimización</h3>
+            <p>Solo almacenamos las cifras necesarias de ingresos y gastos, cifradas en tránsito y reposo.</p>
+          </div>
+          <div class="info-card tarjeta">
+            <span class="icono-circulo">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m5.7 5.7 12.6 12.6" /></svg>
+            </span>
+            <h3>Nunca se comparten</h3>
+            <p>Tus datos no se venden ni se reportan a centrales de riesgo como Cifin o DataCrédito.</p>
+          </div>
+          <div class="info-card tarjeta">
+            <span class="icono-circulo">
+              <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="4" /><path d="M3 21c0-3.3 2.7-6 6-6s6 2.7 6 6" /><path d="m16 11 2 2 4-4" /></svg>
+            </span>
+            <h3>Control del titular</h3>
+            <p>Puedes eliminar tu cuenta y tus datos en cualquier momento, conforme al artículo 9 de la Ley 1581.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA final + footer -->
+    <section id="empezar" class="seccion cta-section">
+      <div class="contenedor cta-contenido">
+        <span class="eyebrow">Empieza hoy</span>
+        <h2 class="titulo-seccion">Recupera tu tranquilidad financiera <span class="acento-serif">antes de fin de mes</span></h2>
+        <p class="texto-seccion">Únete a los jóvenes profesionales que ya controlan sus ingresos y gastos.</p>
+        <div class="hero-actions">
+          <a href="LoginRegistro/loRe.html" class="btn btn-primary btn-large">Crear mi cuenta con cédula</a>
+          <a href="LoginRegistro/loRe.html" class="btn btn-outline btn-large">Ya tengo cuenta</a>
+        </div>
       </div>
 
-      <div class="features-preview">
-        <div class="feature-item">
-          <span class="feature-icon">🆔</span>
-          <p>Identificación única por cédula</p>
-        </div>
-        <div class="feature-item">
-          <span class="feature-icon">📈</span>
-          <p>Balance mensual automático</p>
-        </div>
-        <div class="feature-item">
-          <span class="feature-icon">🔒</span>
-          <p>Datos 100% seguros y privados</p>
-        </div>
-      </div>
-    </div>
+      <footer class="footer">
+        <p>© 2026 Endeudados Colombia. Control financiero para jóvenes en su primer empleo formal.</p>
+      </footer>
+    </section>
+
   </main>
-
-  <!-- Estadísticas de contexto -->
-  <section class="stats-section">
-    <div class="stats-grid">
-      <div class="stat-box">
-        <span class="stat-num">70%</span>
-        <span class="stat-label">De los primeros créditos en Colombia son de menores de 28 años (DataCrédito Experian)</span>
-      </div>
-      <div class="stat-box">
-        <span class="stat-num amber">44,1%</span>
-        <span class="stat-label">De los deudores en mora incumplen por gastar más de lo que perciben (Bravo, 2026)</span>
-      </div>
-      <div class="stat-box">
-        <span class="stat-num">118.000</span>
-        <span class="stat-label">Colombianos acceden por primera vez al crédito cada mes</span>
-      </div>
-      <div class="stat-box">
-        <span class="stat-num amber">23,73% - 63,83%</span>
-        <span class="stat-label">Rango de tasa efectiva anual en productos de bajo monto</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- El Problema: Puntos Ciegos -->
-  <section id="problema" class="content-section">
-    <div class="section-header">
-      <span class="eyebrow">Diagnóstico</span>
-      <h2>Los 3 puntos ciegos del sobreendeudamiento</h2>
-      <p>Cuando un recién graduado adquiere tarjetas, créditos de libre inversión, Icetex y microcréditos digitales a la vez, pierde de vista tres cosas clave.</p>
-    </div>
-
-    <div class="cards-grid">
-      <div class="info-card">
-        <span class="card-number">1</span>
-        <h3>Dinero disponible real</h3>
-        <p>No logran identificar cuánto tienen disponible después de cubrir vivienda, alimentación y transporte.</p>
-      </div>
-      <div class="info-card">
-        <span class="card-number amber">2</span>
-        <h3>Prioridad de pago</h3>
-        <p>No saben qué deudas pagar primero frente a tasas que van del 23,73% al 63,83% efectivo anual.</p>
-      </div>
-      <div class="info-card">
-        <span class="card-number">3</span>
-        <h3>Decisiones concretas</h3>
-        <p>No tienen claridad sobre qué acciones tomar para recuperar su estabilidad sin sacrificar lo esencial.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Gastos Hormiga -->
-  <section id="gastos-hormiga" class="content-section alt-bg">
-    <div class="section-header">
-      <span class="eyebrow">Fugas invisibles</span>
-      <h2>Los gastos hormiga que drenan tu sueldo</h2>
-      <p>Registrar tus gastos del mes te permite verlos antes de que se conviertan en deuda.</p>
-    </div>
-
-    <div class="table-wrapper">
-      <table class="hormiga-table">
-        <thead>
-          <tr>
-            <th>Gasto frecuente</th>
-            <th>Costo mensual aprox.</th>
-            <th>Impacto anual</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Café / domicilios diarios</td>
-            <td>$180.000 - $260.000</td>
-            <td>$2.160.000 - $3.120.000</td>
-          </tr>
-          <tr>
-            <td>Suscripciones olvidadas</td>
-            <td>$95.000</td>
-            <td>$1.140.000</td>
-          </tr>
-          <tr>
-            <td>Transporte por app en trayectos cortos</td>
-            <td>$110.000</td>
-            <td>$1.320.000</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- Simulador -->
-  <section id="simulador" class="content-section">
-    <div class="section-header">
-      <span class="eyebrow">Método Avalancha</span>
-      <h2>¿Qué pasa si abonas un extra mensual?</h2>
-      <p>Simula el efecto de destinar un abono adicional a tu deuda con mayor tasa de interés.</p>
-    </div>
-
-    <div class="simulator-card">
-      <div class="simulator-control">
-        <label for="abono-extra">Abono mensual adicional a capital</label>
-        <span id="abono-valor" class="simulator-value">$0 COP/mes</span>
-        <input type="range" id="abono-extra" min="0" max="400000" step="25000" value="0">
-      </div>
-
-      <div class="simulator-results">
-        <div class="result-box">
-          <span class="result-label">Tiempo estimado para salir de deuda</span>
-          <span id="resultado-meses" class="result-value">24 meses</span>
-        </div>
-        <div class="result-box">
-          <span class="result-label">Ahorro estimado en intereses (12 meses)</span>
-          <span id="resultado-ahorro" class="result-value">$0</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Privacidad -->
-  <section id="seguridad" class="content-section alt-bg">
-    <div class="section-header">
-      <span class="eyebrow">Marco legal colombiano</span>
-      <h2>Tus datos, protegidos por ley</h2>
-      <p>Cumplimos con la Ley 1581 de 2012 (protección de datos) y la Ley 1266 de 2008 (Habeas Data Financiero).</p>
-    </div>
-
-    <div class="cards-grid">
-      <div class="info-card">
-        <h3>🔒 Cifrado y minimización</h3>
-        <p>Solo almacenamos las cifras necesarias de ingresos y gastos, cifradas en tránsito y reposo.</p>
-      </div>
-      <div class="info-card">
-        <h3>🚫 Nunca se comparten</h3>
-        <p>Tus datos no se venden ni se reportan a centrales de riesgo como Cifin o DataCrédito.</p>
-      </div>
-      <div class="info-card">
-        <h3>🆔 Control del titular</h3>
-        <p>Puedes eliminar tu cuenta y tus datos en cualquier momento, conforme al artículo 9 de la Ley 1581.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA final -->
-  <section class="cta-section">
-    <h2>Recupera tu tranquilidad financiera antes de fin de mes</h2>
-    <p>Únete a los jóvenes profesionales que ya controlan sus ingresos y gastos.</p>
-    <div class="hero-actions">
-      <a href="LoginRegistro/loRe.html" class="btn btn-primary btn-large">Crear mi cuenta con cédula</a>
-      <a href="LoginRegistro/loRe.html" class="btn btn-outline btn-large">Ya tengo cuenta</a>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <p>© 2026 Endeudados Colombia. Control financiero para jóvenes en su primer empleo formal.</p>
-  </footer>
 
   <script src="index.js"></script>
 </body>
