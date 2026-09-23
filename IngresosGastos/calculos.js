@@ -1,4 +1,5 @@
 // Logica pura del modulo Ingresos y Gastos: calculos, validaciones y formato.
+// Tambien la usa la pantalla PlanPagos/.
 //
 // Nada de aca toca el DOM ni sabe de donde vienen los datos. Recibe listas de
 // registros { concepto, monto, ... } y devuelve numeros o textos, asi que
@@ -276,6 +277,63 @@ function validarDeuda(entrada) {
     tasaEA: validarTasa(entrada.tasaEA),
     pagoMinimo: validarPagoMinimo(entrada.pagoMinimo)
   });
+}
+
+// ---------------------------------------------------------------------------
+// Plan de pagos del mes (EN-88)
+//
+// Un solo mes, sin simular los siguientes. Con lo que queda despues de lo
+// esencial se reservan primero los minimos de TODAS las deudas; todo lo que
+// sobre va a la deuda de mayor tasa (la prioridad de la avalancha).
+//
+// estado:
+//   'sin-deudas'    no hay deudas registradas: no hay nada que planear
+//   'insuficiente'  la capacidad no cubre la suma de minimos: no hay plan
+//   'plan'          alcanza; pagos dice cuanto abonarle a cada deuda
+// ---------------------------------------------------------------------------
+
+function calcularPlanPagos(ingresos, gastos, deudas) {
+  const resumen = calcularResumen(ingresos, gastos);
+  const resumenDeudas = calcularResumenDeudas(deudas);
+
+  // Capacidad = ingresos - gastos esenciales del mes, el "disponible" del resumen
+  const capacidad = resumen.disponible;
+  const pagoMinimoTotal = resumenDeudas.pagoMinimoTotal;
+  const alcanza = capacidad >= pagoMinimoTotal;
+
+  const plan = {
+    totalIngresos: resumen.totalIngresos,
+    totalGastos: resumen.totalGastos,
+    capacidad,
+    pagoMinimoTotal,
+    excedente: alcanza ? capacidad - pagoMinimoTotal : 0,
+    faltante: alcanza ? 0 : pagoMinimoTotal - capacidad,
+    prioridad: resumenDeudas.prioridad,
+    pagos: [],
+    estado: 'plan'
+  };
+
+  if (resumenDeudas.cantidad === 0) {
+    plan.estado = 'sin-deudas';
+    return plan;
+  }
+  if (!alcanza) {
+    plan.estado = 'insuficiente';
+    return plan;
+  }
+
+  // ordenadas viene en orden avalancha: la prioridad es la primera. Entre
+  // todos los pagos suman exactamente la capacidad.
+  plan.pagos = resumenDeudas.ordenadas.map(function (deuda) {
+    const esPrioridad = deuda === resumenDeudas.prioridad;
+    return {
+      deuda,
+      esPrioridad,
+      pago: deuda.pagoMinimo + (esPrioridad ? plan.excedente : 0)
+    };
+  });
+
+  return plan;
 }
 
 // ---------------------------------------------------------------------------

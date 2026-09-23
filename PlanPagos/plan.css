@@ -1,0 +1,229 @@
+/* Solo lo exclusivo de la pantalla de Plan de pagos.
+ * Colores, secciones, botones, tarjetas, mensajes y la barra con el usuario
+ * vienen de shared/base.css.
+ */
+
+.encabezado-seccion.izquierda {
+  margin-bottom: 2.25rem;
+}
+
+#error-carga {
+  margin: 0 0 1.5rem;
+}
+
+.nav-links a[aria-current="page"] {
+  color: var(--marfil);
+  background: var(--superficie-fuerte);
+}
+
+/* ---------------------------------------------------------------------------
+ * Resumen: capacidad, minimos y excedente
+ * ------------------------------------------------------------------------- */
+
+.plan-resumen {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 760px) {
+  .plan-resumen {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.plan-cifra {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+@media (min-width: 760px) {
+  .plan-cifra {
+    min-height: 170px;
+  }
+}
+
+.plan-etiqueta {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--marfil-suave);
+}
+
+/* Los montos grandes no deben romper la tarjeta: se achican con la ventana y,
+ * si aun asi no caben, parten linea. */
+.plan-monto {
+  font-size: clamp(1.75rem, 3.2vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.plan-detalle {
+  font-size: 0.85rem;
+  color: var(--marfil-tenue);
+}
+
+.tarjeta-clara .plan-etiqueta,
+.tarjeta-clara .plan-detalle {
+  color: var(--tinta-suave);
+}
+
+/* No alcanza para los minimos: lo que falta en terracota (4.6:1 sobre marfil) */
+[data-estado="insuficiente"] .plan-cifra-final .plan-monto {
+  color: var(--terracota);
+}
+
+[data-estado="insuficiente"] .plan-cifra-final {
+  box-shadow: var(--sombra), 0 0 0 3px var(--terracota);
+}
+
+/* ---------------------------------------------------------------------------
+ * Mensaje del plan
+ * ------------------------------------------------------------------------- */
+
+.plan-mensaje {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: var(--marfil-suave);
+}
+
+.plan-mensaje .icono {
+  margin-top: 0.1rem;
+}
+
+.icono-alerta {
+  display: none;
+  color: var(--terracota-claro);
+}
+
+.icono-info {
+  color: var(--marfil-suave);
+}
+
+[data-estado="insuficiente"] .icono-alerta {
+  display: block;
+}
+
+[data-estado="insuficiente"] .icono-info {
+  display: none;
+}
+
+[data-estado="insuficiente"] .plan-mensaje {
+  color: var(--terracota-claro);
+}
+
+/* ---------------------------------------------------------------------------
+ * Lista de pagos
+ * ------------------------------------------------------------------------- */
+
+.plan-pagos {
+  margin-top: 1.5rem;
+}
+
+.plan-pagos-titulo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.lista-pagos {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Nombre a la izquierda, monto a la derecha y la razon debajo, a lo ancho */
+.pago {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "info monto"
+    "razon razon";
+  gap: 0.4rem 1rem;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--borde);
+}
+
+.pago:last-child {
+  border-bottom: none;
+}
+
+.pago-info {
+  grid-area: info;
+  min-width: 0;
+}
+
+.pago-nombre {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.pago-meta {
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--marfil-tenue);
+  font-variant-numeric: tabular-nums;
+}
+
+.pago-monto {
+  grid-area: monto;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.pago-prioridad .pago-monto {
+  color: var(--verde-claro);
+}
+
+.pago-razon {
+  grid-area: razon;
+  font-size: 0.875rem;
+  color: var(--marfil-suave);
+}
+
+.chip-prioridad {
+  display: inline-block;
+  margin-bottom: 0.3rem;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--marfil);
+  background: var(--terracota);
+  border-radius: 999px;
+}
+
+@media (max-width: 480px) {
+  .pago {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "info"
+      "monto"
+      "razon";
+  }
+
+  .pago-monto {
+    text-align: left;
+  }
+}
+
+.plan-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
