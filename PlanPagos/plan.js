@@ -39,13 +39,22 @@ const MENSAJES_PLAN = {
   cargando: function () {
     return 'Calculando tu plan…';
   },
-  'sin-deudas': function () {
-    return 'No tienes deudas registradas. Cuando las agregues, aquí verás cuánto abonarle a cada una este mes.';
+  // Sin deudas igual se dice cuanta plata queda libre, o que no queda nada
+  'sin-deudas': function (plan) {
+    if (plan.faltante > 0) {
+      return `Tus gastos esenciales superan tus ingresos en ${formatearPesos(plan.faltante)}: este mes no te queda plata libre para deudas.`;
+    }
+    return `No tienes deudas registradas. Este mes te quedan ${formatearPesos(plan.excedente)} libres; cuando agregues tus deudas, aquí verás cuánto abonarle a cada una.`;
   },
   insuficiente: function (plan) {
-    const sinIngresos = plan.totalIngresos === 0 ? ' Aún no registras ingresos este mes.' : '';
+    let causa = '';
+    if (plan.totalIngresos === 0) {
+      causa = ' Aún no registras ingresos este mes.';
+    } else if (plan.capacidad < 0) {
+      causa = ' Tus gastos esenciales ya superan tus ingresos.';
+    }
     return `Tu capacidad de pago no alcanza para los pagos mínimos de tus deudas: te faltan ${formatearPesos(plan.faltante)}.` +
-      `${sinIngresos} Por eso no te mostramos un plan de abonos; primero hay que cubrir los mínimos.`;
+      `${causa} Por eso no te mostramos un plan de abonos; primero hay que cubrir los mínimos.`;
   },
   plan: function (plan) {
     if (plan.excedente === 0) {
@@ -82,15 +91,19 @@ function renderizar() {
   const plan = calcularPlanPagos(estado.ingresos, estado.gastos, estado.deudas);
   const estadoPlan = estado.cargado ? plan.estado : 'cargando';
 
-  // El CSS usa data-estado para los colores de alerta
+  // El CSS usa data-deficit para los colores de alerta. Hay deficit cuando no
+  // alcanza para los minimos o, sin deudas, cuando los gastos superan los
+  // ingresos.
+  const hayDeficit = estado.cargado && plan.faltante > 0;
   porId('panel-plan').dataset.estado = estadoPlan;
+  porId('panel-plan').dataset.deficit = hayDeficit ? 'si' : 'no';
 
-  renderizarResumen(plan, estadoPlan);
+  renderizarResumen(plan, hayDeficit);
   porId('mensaje-plan').textContent = MENSAJES_PLAN[estadoPlan](plan);
   renderizarPagos(estadoPlan === 'plan' ? plan.pagos : [], plan);
 }
 
-function renderizarResumen(plan, estadoPlan) {
+function renderizarResumen(plan, hayDeficit) {
   porId('plan-capacidad').textContent = formatearPesos(plan.capacidad);
   porId('plan-capacidad-detalle').textContent =
     `Ingresos ${formatearPesos(plan.totalIngresos)} menos gastos esenciales ${formatearPesos(plan.totalGastos)}`;
@@ -98,12 +111,18 @@ function renderizarResumen(plan, estadoPlan) {
   porId('plan-minimos').textContent = formatearPesos(plan.pagoMinimoTotal);
   porId('plan-minimos-detalle').textContent = textoCantidad(estado.deudas.length, 'deuda', 'deudas');
 
-  // Si no alcanza, la tercera cifra deja de ser el excedente y pasa a ser lo
-  // que falta para cubrir los minimos.
-  if (estadoPlan === 'insuficiente') {
+  // Con excedente negativo la tercera cifra deja de ser el excedente y pasa a
+  // ser lo que falta, diciendo para cubrir que.
+  if (hayDeficit) {
+    let detalle = 'Para cubrir los pagos mínimos';
+    if (plan.pagoMinimoTotal === 0) {
+      detalle = 'Para cubrir tus gastos esenciales';
+    } else if (plan.capacidad < 0) {
+      detalle = 'Para cubrir gastos esenciales y pagos mínimos';
+    }
     porId('plan-excedente-etiqueta').textContent = 'Te faltan';
     porId('plan-excedente').textContent = formatearPesos(plan.faltante);
-    porId('plan-excedente-detalle').textContent = 'Para cubrir los pagos mínimos';
+    porId('plan-excedente-detalle').textContent = detalle;
   } else {
     porId('plan-excedente-etiqueta').textContent = 'Excedente';
     porId('plan-excedente').textContent = formatearPesos(plan.excedente);

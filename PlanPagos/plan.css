@@ -72,12 +72,12 @@
   color: var(--tinta-suave);
 }
 
-/* No alcanza para los minimos: lo que falta en terracota (4.6:1 sobre marfil) */
-[data-estado="insuficiente"] .plan-cifra-final .plan-monto {
+/* Excedente negativo: lo que falta en terracota (4.6:1 sobre marfil) */
+[data-deficit="si"] .plan-cifra-final .plan-monto {
   color: var(--terracota);
 }
 
-[data-estado="insuficiente"] .plan-cifra-final {
+[data-deficit="si"] .plan-cifra-final {
   box-shadow: var(--sombra), 0 0 0 3px var(--terracota);
 }
 
@@ -107,15 +107,15 @@
   color: var(--marfil-suave);
 }
 
-[data-estado="insuficiente"] .icono-alerta {
+[data-deficit="si"] .icono-alerta {
   display: block;
 }
 
-[data-estado="insuficiente"] .icono-info {
+[data-deficit="si"] .icono-info {
   display: none;
 }
 
-[data-estado="insuficiente"] .plan-mensaje {
+[data-deficit="si"] .plan-mensaje {
   color: var(--terracota-claro);
 }
 
