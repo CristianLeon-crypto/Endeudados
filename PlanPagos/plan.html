@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endeudados - Plan de pagos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="../shared/base.css">
+    <link rel="stylesheet" href="plan.css">
+</head>
+
+<body>
+
+    <header class="navbar">
+        <a href="../index.html" class="logo">
+            <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
+                <defs>
+                    <linearGradient id="logo-degradado" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0" stop-color="#1C1C1C" />
+                        <stop offset="1" stop-color="#28B660" />
+                    </linearGradient>
+                </defs>
+                <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#logo-degradado)" stroke="#F3ECDE" stroke-opacity="0.18" />
+                <rect x="9" y="11" width="22" height="4" rx="2" fill="#F3ECDE" />
+                <rect x="9" y="18" width="15" height="4" rx="2" fill="#F3ECDE" />
+                <rect x="9" y="25" width="8" height="4" rx="2" fill="#A9501C" />
+            </svg>
+            <span class="logo-texto">Endeudados</span>
+        </a>
+        <nav class="nav-links" aria-label="Secciones">
+            <a href="../IngresosGastos/inGas.html">Ingresos y gastos</a>
+            <a href="../IngresosGastos/inGas.html#deudas">Deudas</a>
+            <a href="#plan" aria-current="page">Plan de pagos</a>
+        </nav>
+        <p id="usuario-actual" class="chip-usuario hidden">
+            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" /></svg>
+            <span id="usuario-nombre"></span>
+        </p>
+    </header>
+
+    <main>
+
+        <!-- EN-88: plan de pagos de un solo mes -->
+        <section id="plan" class="seccion" aria-labelledby="titulo-plan">
+            <div class="contenedor">
+                <div class="encabezado-seccion izquierda">
+                    <span class="eyebrow"><span>Plan de <span id="periodo-nombre">este mes</span></span></span>
+                    <h1 id="titulo-plan" class="titulo-seccion">Cuánto abonarle <span class="acento-serif">a cada deuda</span></h1>
+                    <p class="texto-seccion">Con lo que te queda después de lo esencial cubrimos primero los pagos mínimos de todas tus deudas. Lo que sobre va completo a la deuda con la tasa más alta.</p>
+                </div>
+
+                <p id="error-carga" class="error-msg hidden" role="alert"></p>
+
+                <!-- plan.css usa data-deficit para los colores de alerta -->
+                <div id="panel-plan" class="panel-plan" data-estado="cargando" data-deficit="no">
+                    <div class="plan-resumen">
+                        <article class="tarjeta plan-cifra">
+                            <h2 class="plan-etiqueta">Capacidad de pago</h2>
+                            <p id="plan-capacidad" class="plan-monto">$ 0</p>
+                            <p id="plan-capacidad-detalle" class="plan-detalle">Ingresos menos gastos esenciales</p>
+                        </article>
+
+                        <article class="tarjeta plan-cifra">
+                            <h2 class="plan-etiqueta">Pagos mínimos</h2>
+                            <p id="plan-minimos" class="plan-monto">$ 0</p>
+                            <p id="plan-minimos-detalle" class="plan-detalle">Sin deudas</p>
+                        </article>
+
+                        <article class="tarjeta tarjeta-clara plan-cifra plan-cifra-final">
+                            <h2 id="plan-excedente-etiqueta" class="plan-etiqueta">Excedente</h2>
+                            <p id="plan-excedente" class="plan-monto">$ 0</p>
+                            <p id="plan-excedente-detalle" class="plan-detalle">Capacidad menos pagos mínimos</p>
+                        </article>
+                    </div>
+
+                    <p class="plan-mensaje">
+                        <svg class="icono icono-alerta" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4" /><path d="M12 17h.01" /></svg>
+                        <svg class="icono icono-info" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
+                        <span id="mensaje-plan" aria-live="polite">Calculando tu plan…</span>
+                    </p>
+
+                    <div id="bloque-pagos" class="tarjeta plan-pagos hidden">
+                        <h2 class="plan-pagos-titulo">Tu plan de abonos de este mes</h2>
+                        <ol id="lista-pagos" class="lista-pagos"></ol>
+                    </div>
+                </div>
+
+                <div class="plan-acciones">
+                    <a href="../IngresosGastos/inGas.html" class="btn btn-primary">Actualizar ingresos y gastos</a>
+                    <a href="../IngresosGastos/inGas.html#deudas" class="btn btn-secondary">Ver mis deudas</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Plantilla de pago. plan.js la clona y la llena con textContent. -->
+    <template id="plantilla-pago">
+        <li class="pago">
+            <div class="pago-info">
+                <span class="chip-prioridad">Prioridad</span>
+                <h3 class="pago-nombre"></h3>
+                <p class="pago-meta"></p>
+            </div>
+            <p class="pago-monto"></p>
+            <p class="pago-razon"></p>
+        </li>
+    </template>
+
+    <!-- Orden importa: calculos y datos definen las funciones que usa plan.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../shared/supabase.js"></script>
+    <script src="../IngresosGastos/calculos.js"></script>
+    <script src="../IngresosGastos/datos.js"></script>
+    <script src="plan.js"></script>
+
+</body>
+
+</html>
