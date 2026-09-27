@@ -38,11 +38,17 @@
             <a href="#deudas">Deudas</a>
             <a href="../PlanPagos/plan.html">Plan de pagos</a>
         </nav>
-        <p id="usuario-actual" class="chip-usuario hidden">
-            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" /></svg>
-            <span id="usuario-nombre"></span>
-        </p>
-    </header>
+        <div class="nav-buttons">
+    <p id="usuario-actual" class="chip-usuario hidden">
+        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" /></svg>
+        <span id="usuario-nombre"></span>
+    </p>
+    <button type="button" id="btn-cerrar-sesion" class="btn btn-ghost btn-cerrar-sesion">
+        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></svg>
+        <span class="texto-cerrar-sesion">Cerrar sesión</span>
+    </button>
+        </div>
+      </header>
 
     <main>
 

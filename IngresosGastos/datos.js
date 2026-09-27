@@ -50,6 +50,15 @@ async function getUsuarioActual() {
   return _usuario;
 }
 
+// Cierra la sesion en Supabase y limpia el cache local (cerrar sesion).
+// Sin limpiar `_usuario` una nueva visita a la pantalla seguiria mostrando al
+// usuario anterior mientras dure la pagina cargada en memoria.
+async function cerrarSesion() {
+  const { error } = await sbClient.auth.signOut();
+  if (error) throw error;
+  _usuario = null;
+}
+
 // ----
 // Categorias de gasto esencial (fijas en codigo; no hay tabla)
 // ----
