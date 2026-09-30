@@ -1,293 +1,477 @@
-// ====
-// CAPA DE DATOS del modulo Ingresos y Gastos (Supabase)
+// Logica pura del modulo Ingresos y Gastos: calculos, validaciones y formato.
+// Tambien la usa la pantalla PlanPagos/.
 //
-// Unico punto de contacto con los datos. La pantalla (inGas.js) solo llama
-// las funciones publicas de aca; no habla con Supabase ni con localStorage.
-//
-// Tablas reales de la base:
-//   ingresos  id int8 | usuario_id | descripcion | monto | fecha | creado_en
-//   gastos    id int8 | usuario_id | descripcion | categoria | monto | fecha | tipo ('esencial'|'hormiga') | creado_en
-//   deudas    id int8 | usuario_id | nombre | saldo | tasa_ea | pago_minimo | fecha | creado_en
-//   usuarios  id uuid | auth_id -> auth.users.id | cedula | nombre | email
-//
-// Mapeo pantalla <-> base (se traduce SOLO aca):
-//   concepto     <-> descripcion
-//   montoMensual <-> monto (gastos con tipo = 'hormiga')
-//   tasaEA       <-> tasa_ea
-//   pagoMinimo   <-> pago_minimo
-//
-// El usuario_id se resuelve con la sesion: auth.users -> usuarios.auth_id.
-// Con RLS activo cada quien ve y escribe solo sus filas.
-// ====
+// Nada de aca toca el DOM ni sabe de donde vienen los datos. Recibe listas de
+// registros { concepto, monto, ... } y devuelve numeros o textos, asi que
+// funciona igual con los datos de prueba de hoy que con los de Supabase.
 
-let _usuario = null;
+// Tope de seguridad para un monto: 1 billon de pesos. Evita que un error de
+// tipeo (ceros de mas) dispare los totales.
+const MONTO_MAXIMO = 1000000000000;
+const LARGO_MAXIMO_CONCEPTO = 60;
 
-// ----
-// Usuario / sesion
-// ----
+const formatoPesos = new Intl.NumberFormat('es-CO', {
+  style: 'currency',
+  currency: 'COP',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0
+});
 
-async function getUsuarioActual() {
-  if (_usuario) {
-    return _usuario;
-  }
+const formatoMiles = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
 
-  const { data: sesion, error: errorSesion } = await sbClient.auth.getSession();
-  if (errorSesion) throw errorSesion;
+// ---------------------------------------------------------------------------
+// Calculos (EN-6)
+// ---------------------------------------------------------------------------
 
-  const user = sesion.session?.user;
-  if (!user) return null; // sin sesion -> la pantalla redirige al login
-
-  // El id que usan las tablas es el de la fila en usuarios, no el de auth
-  const { data, error } = await sbClient
-    .from('usuarios')
-    .select('id, nombre, email')
-    .eq('auth_id', user.id)
-    .single();
-
-  if (error) throw error;
-
-  _usuario = { id: data.id, nombre: data.nombre || user.email, email: data.email || user.email };
-  return _usuario;
+function sumarMontos(registros) {
+  return registros.reduce(function (total, registro) {
+    return total + registro.monto;
+  }, 0);
 }
 
-// ----
-// Categorias de gasto esencial (fijas en codigo; no hay tabla)
-// ----
+// Todo lo que muestra la seccion de resumen sale de aca.
+//
+// estado:
+//   'vacio'         no hay ingresos ni gastos
+//   'sin-ingresos'  hay gastos pero ningun ingreso (el porcentaje no existe)
+//   'excedido'      los gastos esenciales superan los ingresos
+//   'justo'         los gastos se comen exactamente todo el ingreso
+//   'normal'        queda dinero disponible
+function calcularResumen(ingresos, gastos) {
+  const totalIngresos = sumarMontos(ingresos);
+  const totalGastos = sumarMontos(gastos);
+  const disponible = totalIngresos - totalGastos;
 
-async function obtenerCategorias() {
-  return [
-    { id: 'vivienda', nombre: 'Vivienda' },
-    { id: 'alimentacion', nombre: 'Alimentación' },
-    { id: 'transporte', nombre: 'Transporte' },
-    { id: 'servicios', nombre: 'Servicios públicos' },
-    { id: 'salud', nombre: 'Salud' },
-    { id: 'educacion', nombre: 'Educación' }
-  ];
+  // Con ingresos en cero el porcentaje seria una division por cero: se deja en
+  // null y la pantalla muestra un texto en vez de un numero.
+  const porcentajeGastos = totalIngresos > 0 ? (totalGastos / totalIngresos) * 100 : null;
+
+  let estado = 'normal';
+  if (totalIngresos === 0 && totalGastos === 0) {
+    estado = 'vacio';
+  } else if (totalIngresos === 0) {
+    estado = 'sin-ingresos';
+  } else if (disponible < 0) {
+    estado = 'excedido';
+  } else if (disponible === 0) {
+    estado = 'justo';
+  }
+
+  return { totalIngresos, totalGastos, disponible, porcentajeGastos, estado };
 }
 
-// ----
-// Ingresos (EN-4)
-// ----
+// ---------------------------------------------------------------------------
+// Validaciones (EN-4, EN-5)
+// ---------------------------------------------------------------------------
 
-async function obtenerIngresos(periodo) {
-  let consulta = sbClient.from('ingresos').select('id, descripcion, monto, fecha');
-  if (periodo) {
-    const { desde, hasta } = _rangoDelPeriodo(periodo);
-    consulta = consulta.gte('fecha', desde).lt('fecha', hasta);
+// Convierte lo que el usuario escribio en un numero de pesos.
+// Acepta "1500000", "1.500.000" y "$ 1.500.000". Rechaza centavos y cualquier
+// otra cosa devolviendo NaN, para no adivinar que quiso decir con "1,5".
+function parsearMonto(texto) {
+  const limpio = String(texto).replace(/[\s$]/g, '');
+  const soloDigitos = /^\d+$/;
+  const conPuntosDeMiles = /^\d{1,3}(\.\d{3})+$/;
+
+  if (!soloDigitos.test(limpio) && !conPuntosDeMiles.test(limpio)) {
+    return NaN;
   }
-  const { data, error } = await consulta;
-  if (error) throw error;
-  return data.map(function (fila) {
-    return { id: fila.id, concepto: fila.descripcion, monto: Number(fila.monto), fecha: fila.fecha };
+  return Number(limpio.replace(/\./g, ''));
+}
+
+// mensajeVacio permite cambiar el texto cuando el campo no se llama "concepto"
+// (por ejemplo el nombre de una deuda).
+function validarConcepto(texto, mensajeVacio) {
+  const concepto = String(texto).trim();
+  if (!concepto) {
+    return { error: mensajeVacio || 'Escribe un concepto.' };
+  }
+  if (concepto.length > LARGO_MAXIMO_CONCEPTO) {
+    return { error: `El concepto puede tener máximo ${LARGO_MAXIMO_CONCEPTO} caracteres.` };
+  }
+  return { valor: concepto };
+}
+
+function validarMonto(texto) {
+  if (!String(texto).trim()) {
+    return { error: 'Escribe el monto.' };
+  }
+  const monto = parsearMonto(texto);
+  if (Number.isNaN(monto)) {
+    return { error: 'Escribe el monto en pesos, solo números y sin centavos. Ej. 1.500.000' };
+  }
+  if (monto <= 0) {
+    return { error: 'El monto debe ser mayor que cero.' };
+  }
+  if (monto > MONTO_MAXIMO) {
+    return { error: 'Ese monto es demasiado alto. Revisa que no sobren ceros.' };
+  }
+  return { valor: monto };
+}
+
+// Junta los resultados de cada campo en { valido, errores, datos }.
+// errores tiene una llave por campo con problema; datos trae los valores ya
+// limpios, listos para mandar a la capa de datos.
+function armarResultado(campos) {
+  const errores = {};
+  const datos = {};
+
+  Object.keys(campos).forEach(function (nombre) {
+    if (campos[nombre].error) {
+      errores[nombre] = campos[nombre].error;
+    } else {
+      datos[nombre] = campos[nombre].valor;
+    }
+  });
+
+  return { valido: Object.keys(errores).length === 0, errores, datos };
+}
+
+function validarIngreso(entrada) {
+  return armarResultado({
+    concepto: validarConcepto(entrada.concepto),
+    monto: validarMonto(entrada.monto)
   });
 }
 
-async function agregarIngreso(datos) {
-  const usuario = await getUsuarioActual();
-  const { data, error } = await sbClient
-    .from('ingresos')
-    .insert({
-      usuario_id: usuario.id,
-      descripcion: datos.concepto,
-      monto: datos.monto,
-      fecha: _fechaDeHoy()
-    })
-    .select('id, descripcion, monto, fecha')
-    .single();
-  if (error) throw error;
-  return { id: data.id, concepto: data.descripcion, monto: Number(data.monto), fecha: data.fecha };
-}
+// categorias: lista de { id, nombre } tal como la devuelve la capa de datos.
+function validarGasto(entrada, categorias) {
+  const existe = categorias.some(function (categoria) {
+    return categoria.id === entrada.categoria;
+  });
 
-async function eliminarIngreso(id) {
-  const { error } = await sbClient.from('ingresos').delete().eq('id', id);
-  if (error) throw error;
-}
-
-// ----
-// Gastos esenciales (EN-5) y gastos hormiga (misma tabla, columna tipo)
-// ----
-
-async function obtenerGastos(periodo) {
-  let consulta = sbClient.from('gastos').select('id, descripcion, categoria, monto, fecha').eq('tipo', 'esencial');
-  if (periodo) {
-    const { desde, hasta } = _rangoDelPeriodo(periodo);
-    consulta = consulta.gte('fecha', desde).lt('fecha', hasta);
-  }
-  const { data, error } = await consulta;
-  if (error) throw error;
-  return data.map(function (fila) {
-    return { id: fila.id, concepto: fila.descripcion, categoria: fila.categoria, monto: Number(fila.monto), fecha: fila.fecha };
+  return armarResultado({
+    concepto: validarConcepto(entrada.concepto),
+    categoria: existe ? { valor: entrada.categoria } : { error: 'Selecciona una categoría.' },
+    monto: validarMonto(entrada.monto)
   });
 }
 
-async function agregarGasto(datos) {
-  const usuario = await getUsuarioActual();
-  const { data, error } = await sbClient
-    .from('gastos')
-    .insert({
-      usuario_id: usuario.id,
-      descripcion: datos.concepto,
-      categoria: datos.categoria,
-      monto: datos.monto,
-      fecha: _fechaDeHoy(),
-      tipo: 'esencial'
-    })
-    .select('id, descripcion, categoria, monto, fecha')
-    .single();
-  if (error) throw error;
-  return { id: data.id, concepto: data.descripcion, categoria: data.categoria, monto: Number(data.monto), fecha: data.fecha };
+// ---------------------------------------------------------------------------
+// Gastos hormiga
+//
+// Gastos chicos y repetidos. Lo que importa no es el monto del mes sino lo que
+// suman en un año: impacto anual = monto mensual x 12.
+// ---------------------------------------------------------------------------
+
+const MESES_DEL_ANIO = 12;
+
+function calcularImpactoAnual(montoMensual) {
+  return montoMensual * MESES_DEL_ANIO;
 }
 
-async function eliminarGasto(id) {
-  const { error } = await sbClient.from('gastos').delete().eq('id', id);
-  if (error) throw error;
-}
+function calcularResumenHormiga(gastosHormiga) {
+  const totalMensual = gastosHormiga.reduce(function (total, gasto) {
+    return total + gasto.montoMensual;
+  }, 0);
 
-async function obtenerGastosHormiga(periodo) {
-  let consulta = sbClient.from('gastos').select('id, descripcion, monto, fecha').eq('tipo', 'hormiga');
-  if (periodo) {
-    const { desde, hasta } = _rangoDelPeriodo(periodo);
-    consulta = consulta.gte('fecha', desde).lt('fecha', hasta);
-  }
-  const { data, error } = await consulta;
-  if (error) throw error;
-  return data.map(function (fila) {
-    return { id: fila.id, concepto: fila.descripcion, montoMensual: Number(fila.monto), fecha: fila.fecha };
-  });
-}
-
-async function agregarGastoHormiga(datos) {
-  const usuario = await getUsuarioActual();
-  const { data, error } = await sbClient
-    .from('gastos')
-    .insert({
-      usuario_id: usuario.id,
-      descripcion: datos.concepto,
-      monto: datos.montoMensual,
-      fecha: _fechaDeHoy(),
-      tipo: 'hormiga'
-    })
-    .select('id, descripcion, monto, fecha')
-    .single();
-  if (error) throw error;
-  return { id: data.id, concepto: data.descripcion, montoMensual: Number(data.monto), fecha: data.fecha };
-}
-
-async function eliminarGastoHormiga(id) {
-  const { error } = await sbClient.from('gastos').delete().eq('id', id);
-  if (error) throw error;
-}
-
-// ----
-// Deudas (no se filtran por mes: son un saldo vigente)
-// ----
-
-async function obtenerDeudas() {
-  const { data, error } = await sbClient
-    .from('deudas')
-    .select('id, nombre, saldo, tasa_ea, pago_minimo, fecha');
-  if (error) throw error;
-  return data.map(function (fila) {
-    return {
-      id: fila.id,
-      nombre: fila.nombre,
-      saldo: Number(fila.saldo),
-      tasaEA: Number(fila.tasa_ea),
-      pagoMinimo: Number(fila.pago_minimo),
-      fecha: fila.fecha
-    };
-  });
-}
-
-async function agregarDeuda(datos) {
-  const usuario = await getUsuarioActual();
-  const { data, error } = await sbClient
-    .from('deudas')
-    .insert({
-      usuario_id: usuario.id,
-      nombre: datos.nombre,
-      saldo: datos.saldo,
-      tasa_ea: datos.tasaEA,
-      pago_minimo: datos.pagoMinimo,
-      fecha: _fechaDeHoy()
-    })
-    .select('id, nombre, saldo, tasa_ea, pago_minimo, fecha')
-    .single();
-  if (error) throw error;
   return {
-    id: data.id,
-    nombre: data.nombre,
-    saldo: Number(data.saldo),
-    tasaEA: Number(data.tasa_ea),
-    pagoMinimo: Number(data.pago_minimo),
-    fecha: data.fecha
+    cantidad: gastosHormiga.length,
+    totalMensual,
+    impactoAnual: calcularImpactoAnual(totalMensual)
   };
 }
 
-async function eliminarDeuda(id) {
-  const { error } = await sbClient.from('deudas').delete().eq('id', id);
-  if (error) throw error;
+function validarGastoHormiga(entrada) {
+  return armarResultado({
+    concepto: validarConcepto(entrada.concepto),
+    montoMensual: validarMonto(entrada.montoMensual)
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Deudas (metodo avalancha)
+//
+// La avalancha consiste en abonar de mas a la deuda con la tasa mas alta: es la
+// que mas intereses cobra por cada peso que sigue debiendo.
+// ---------------------------------------------------------------------------
+
+const TASA_MAXIMA = 300; // % efectivo anual; mas que eso es un error de tipeo
+
+// Tasa efectiva mensual equivalente a una efectiva anual:
+// (1 + EA)^(1/12) - 1. No es simplemente EA / 12 porque el interes se compone.
+function tasaMensualEquivalente(tasaEA) {
+  return Math.pow(1 + tasaEA / 100, 1 / 12) - 1;
+}
+
+// Cuanto cuesta un mes de esa deuda si no se abona nada
+function calcularInteresMensual(deuda) {
+  return deuda.saldo * tasaMensualEquivalente(deuda.tasaEA);
+}
+
+// Mayor tasa primero. Si dos deudas tienen la misma tasa, primero la de menor
+// saldo, que se termina de pagar antes.
+function ordenarPorAvalancha(deudas) {
+  return deudas.slice().sort(function (a, b) {
+    if (b.tasaEA !== a.tasaEA) {
+      return b.tasaEA - a.tasaEA;
+    }
+    return a.saldo - b.saldo;
+  });
+}
+
+function calcularResumenDeudas(deudas) {
+  const ordenadas = ordenarPorAvalancha(deudas);
+
+  const saldoTotal = ordenadas.reduce(function (total, deuda) { return total + deuda.saldo; }, 0);
+  const pagoMinimoTotal = ordenadas.reduce(function (total, deuda) { return total + deuda.pagoMinimo; }, 0);
+  const interesMensual = ordenadas.reduce(function (total, deuda) {
+    return total + calcularInteresMensual(deuda);
+  }, 0);
+
+  return {
+    cantidad: ordenadas.length,
+    ordenadas,
+    saldoTotal,
+    pagoMinimoTotal,
+    // Se redondea a pesos: mostrar centavos en una estimacion no aporta nada
+    interesMensual: Math.round(interesMensual),
+    prioridad: ordenadas[0] || null
+  };
+}
+
+// Acepta "42,5", "42.5", "42" y "42,5 %". Devuelve NaN si no se entiende.
+function parsearTasa(texto) {
+  const limpio = String(texto).replace(/[\s%]/g, '').replace(',', '.');
+  if (!/^\d{1,3}(\.\d{1,2})?$/.test(limpio)) {
+    return NaN;
+  }
+  return Number(limpio);
+}
+
+function validarTasa(texto) {
+  if (!String(texto).trim()) {
+    return { error: 'Escribe la tasa de interés.' };
+  }
+  const tasa = parsearTasa(texto);
+  if (Number.isNaN(tasa)) {
+    return { error: 'Escribe la tasa como número, con máximo dos decimales. Ej. 42,5' };
+  }
+  if (tasa <= 0) {
+    return { error: 'La tasa debe ser mayor que cero.' };
+  }
+  if (tasa > TASA_MAXIMA) {
+    return { error: `La tasa no puede superar ${TASA_MAXIMA}% efectivo anual.` };
+  }
+  return { valor: tasa };
+}
+
+// El pago minimo si puede ser cero (hay creditos sin cuota minima este mes)
+function validarPagoMinimo(texto) {
+  if (!String(texto).trim()) {
+    return { error: 'Escribe el pago mínimo.' };
+  }
+  const monto = parsearMonto(texto);
+  if (Number.isNaN(monto)) {
+    return { error: 'Escribe el monto en pesos, solo números y sin centavos. Ej. 180.000' };
+  }
+  if (monto > MONTO_MAXIMO) {
+    return { error: 'Ese monto es demasiado alto. Revisa que no sobren ceros.' };
+  }
+  return { valor: monto };
+}
+
+function validarDeuda(entrada) {
+  return armarResultado({
+    nombre: validarConcepto(entrada.nombre, 'Escribe el nombre de la deuda.'),
+    saldo: validarMonto(entrada.saldo),
+    tasaEA: validarTasa(entrada.tasaEA),
+    pagoMinimo: validarPagoMinimo(entrada.pagoMinimo)
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Plan de pagos del mes (EN-88)
+//
+// Un solo mes, sin simular los siguientes. Con lo que queda despues de lo
+// esencial se reservan primero los minimos de TODAS las deudas; todo lo que
+// sobre va a la deuda de mayor tasa (la prioridad de la avalancha).
+//
+// estado:
+//   'sin-deudas'    no hay deudas registradas: no hay nada que planear
+//   'insuficiente'  la capacidad no cubre la suma de minimos: no hay plan
+//   'plan'          alcanza; pagos dice cuanto abonarle a cada deuda
+// ---------------------------------------------------------------------------
+
+function calcularPlanPagos(ingresos, gastos, deudas) {
+  const resumen = calcularResumen(ingresos, gastos);
+  const resumenDeudas = calcularResumenDeudas(deudas);
+
+  // Capacidad = ingresos - gastos esenciales del mes, el "disponible" del resumen
+  const capacidad = resumen.disponible;
+
+  // El minimo de una deuda nunca puede ser mayor que lo que se debe: una deuda
+  // de 30.000 con minimo de 50.000 se salda con 30.000 (EN-101).
+  const pagoMinimoTotal = resumenDeudas.ordenadas.reduce(function (total, deuda) {
+    return total + Math.min(deuda.pagoMinimo, deuda.saldo);
+  }, 0);
+
+  const alcanza = capacidad >= pagoMinimoTotal;
+
+  const plan = {
+    totalIngresos: resumen.totalIngresos,
+    totalGastos: resumen.totalGastos,
+    capacidad,
+    pagoMinimoTotal,
+    excedente: alcanza ? capacidad - pagoMinimoTotal : 0,
+    faltante: alcanza ? 0 : pagoMinimoTotal - capacidad,
+    // Lo que queda despues de saldar TODAS las deudas, si es que sobra
+    sobrante: 0,
+    prioridad: resumenDeudas.prioridad,
+    pagos: [],
+    estado: 'plan'
+  };
+
+  if (resumenDeudas.cantidad === 0) {
+    plan.estado = 'sin-deudas';
+    return plan;
+  }
+  if (!alcanza) {
+    plan.estado = 'insuficiente';
+    return plan;
+  }
+
+  // ordenadas viene en orden avalancha: la prioridad es la primera.
+  // Primero el minimo de cada deuda, topado a lo que se debe.
+  plan.pagos = resumenDeudas.ordenadas.map(function (deuda, indice) {
+    const minimo = Math.min(deuda.pagoMinimo, deuda.saldo);
+    return { deuda, esPrioridad: indice === 0, minimo, extra: 0, pago: minimo };
+  });
+
+  // Despues el excedente, en orden de tasa y sin pasar del saldo de cada deuda.
+  // Cuando una queda saldada, lo que sobra pasa a la siguiente: esa cascada ES
+  // el metodo avalancha. Antes el excedente completo iba a la primera deuda
+  // aunque solo se debieran 200.000 de ella, y el plan sugeria abonar de mas
+  // mientras la siguiente recibia solo su minimo (EN-101).
+  let porRepartir = plan.excedente;
+  plan.pagos.forEach(function (item) {
+    if (porRepartir <= 0) {
+      return;
+    }
+    const faltaParaSaldar = item.deuda.saldo - item.pago;
+    const extra = Math.min(faltaParaSaldar, porRepartir);
+    item.extra = extra;
+    item.pago += extra;
+    porRepartir -= extra;
+  });
+
+  // Si alcanzo para saldar todas las deudas, esto es lo que queda libre.
+  plan.sobrante = porRepartir;
+
+  return plan;
 }
 
 // ----
-// Helpers de fecha (columna date: 'AAAA-MM-DD', con hora local, no UTC)
+// Analisis financiero (modulo Deudas)
+//
+// Funciones que arman los datos de los graficos de torta de la pantalla
+// Deudas/. Devuelven las cifras que se muestran como titulares y una lista de
+// porciones { etiqueta, valor } lista para Chart.js.
 // ----
+
+// Estado financiero del mes: como se reparte el ingreso entre lo esencial y
+// lo que queda disponible. Con deficit la porcion disponible no existe.
+function calcularEstadoFinanciero(ingresos, gastos) {
+  const resumen = calcularResumen(ingresos, gastos);
+
+  const porciones = [{ etiqueta: 'Gastos esenciales', valor: resumen.totalGastos }];
+  if (resumen.disponible > 0) {
+    porciones.push({ etiqueta: 'Disponible', valor: resumen.disponible });
+  }
+
+  return {
+    totalIngresos: resumen.totalIngresos,
+    totalGastos: resumen.totalGastos,
+    disponible: resumen.disponible,
+    estado: resumen.estado,
+    porciones
+  };
+}
+
+// Distribucion del saldo total entre cada deuda, en orden avalancha
+function calcularDistribucionDeudas(deudas) {
+  const resumen = calcularResumenDeudas(deudas);
+
+  return {
+    saldoTotal: resumen.saldoTotal,
+    cantidad: resumen.cantidad,
+    prioridad: resumen.prioridad,
+    porciones: resumen.ordenadas.map(function (deuda) {
+      return { etiqueta: deuda.nombre, valor: deuda.saldo };
+    })
+  };
+}
+
+// Ratios del mes: ingresos frente a gastos esenciales y gastos hormiga
+function calcularRatios(ingresos, gastos, gastosHormiga) {
+  const totalIngresos = sumarMontos(ingresos);
+  const totalGastos = sumarMontos(gastos);
+  const totalHormiga = calcularResumenHormiga(gastosHormiga).totalMensual;
+
+  return {
+    totalIngresos,
+    totalGastos,
+    totalHormiga,
+    porciones: [
+      { etiqueta: 'Ingresos', valor: totalIngresos },
+      { etiqueta: 'Gastos esenciales', valor: totalGastos },
+      { etiqueta: 'Gastos hormiga', valor: totalHormiga }
+    ]
+  };
+}
 
 // ----
 // Abonos (pagos a deudas)
-//
-// El saldo de la deuda se actualiza solo: un trigger en la base resta el monto
-// al insertar y lo devuelve al borrar. Aca solo se guarda el movimiento.
 // ----
 
-async function obtenerAbonos(deudaId) {
-  let consulta = sbClient.from('abonos').select('id, deuda_id, monto, fecha');
-  if (deudaId) {
-    consulta = consulta.eq('deuda_id', deudaId);
-  }
-  const { data, error } = await consulta;
-  if (error) throw error;
-  return data.map(function (fila) {
-    return { id: fila.id, deudaId: fila.deuda_id, monto: Number(fila.monto), fecha: fila.fecha };
+// deudas: lista de { id, nombre, ... } tal como la devuelve la capa de datos.
+function validarAbono(entrada, deudas) {
+  const existe = deudas.some(function (deuda) {
+    return String(deuda.id) === String(entrada.deudaId);
+  });
+
+  return armarResultado({
+    deudaId: existe ? { valor: entrada.deudaId } : { error: 'Selecciona una deuda.' },
+    monto: validarMonto(entrada.monto)
   });
 }
 
-async function agregarAbono(datos) {
-  const usuario = await getUsuarioActual();
-  const { data, error } = await sbClient
-    .from('abonos')
-    .insert({
-      deuda_id: datos.deudaId,
-      usuario_id: usuario.id,
-      monto: datos.monto,
-      fecha: _fechaDeHoy()
-    })
-    .select('id, deuda_id, monto, fecha')
-    .single();
-  if (error) throw error;
-  return { id: data.id, deudaId: data.deuda_id, monto: Number(data.monto), fecha: data.fecha };
+// ---------------------------------------------------------------------------
+// Formato
+// ---------------------------------------------------------------------------
+
+function formatearPesos(valor) {
+  return formatoPesos.format(valor);
 }
 
-async function eliminarAbono(id) {
-  const { error } = await sbClient.from('abonos').delete().eq('id', id);
-  if (error) throw error;
+// "1500000" -> "1.500.000", para mostrar dentro del input
+function formatearMiles(valor) {
+  return formatoMiles.format(valor);
 }
 
-function _aDia(fecha) {
+// Menos de 10% se muestra con un decimal para que un gasto pequeño no aparezca
+// como "0 %".
+function formatearPorcentaje(porcentaje) {
+  if (porcentaje === null) {
+    return 'Sin datos';
+  }
+  const decimales = porcentaje > 0 && porcentaje < 10 ? 1 : 0;
+  return porcentaje.toLocaleString('es-CO', { maximumFractionDigits: decimales }) + '%';
+}
+
+// 42.5 -> '42,5% E.A.'
+function formatearTasa(tasaEA) {
+  return tasaEA.toLocaleString('es-CO', { maximumFractionDigits: 2 }) + '% E.A.';
+}
+
+// Periodo en formato 'AAAA-MM' segun la hora local del usuario (no UTC: a las
+// 8 p. m. del 30 en Colombia ya es el dia 1 en UTC).
+function periodoDeFecha(fecha) {
   const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-  const dia = String(fecha.getDate()).padStart(2, '0');
-  return `${fecha.getFullYear()}-${mes}-${dia}`;
+  return `${fecha.getFullYear()}-${mes}`;
 }
 
-function _fechaDeHoy() {
-  return _aDia(new Date());
-}
-
-// '2026-09' -> { desde: '2026-09-01', hasta: '2026-10-01' } para la consulta
-function _rangoDelPeriodo(periodo) {
+// '2026-09' -> 'septiembre de 2026'
+function nombreDelPeriodo(periodo) {
   const [anio, mes] = periodo.split('-').map(Number);
-  return {
-    desde: _aDia(new Date(anio, mes - 1, 1)),
-    hasta: _aDia(new Date(anio, mes, 1))
-  };
+  return new Date(anio, mes - 1, 1).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
 }
