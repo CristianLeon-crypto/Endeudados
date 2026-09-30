@@ -1,4 +1,5 @@
 // Logica pura del modulo Ingresos y Gastos: calculos, validaciones y formato.
+// Tambien la usa la pantalla PlanPagos/.
 //
 // Nada de aca toca el DOM ni sabe de donde vienen los datos. Recibe listas de
 // registros { concepto, monto, ... } y devuelve numeros o textos, asi que
@@ -276,6 +277,87 @@ function validarDeuda(entrada) {
     tasaEA: validarTasa(entrada.tasaEA),
     pagoMinimo: validarPagoMinimo(entrada.pagoMinimo)
   });
+}
+
+// ---------------------------------------------------------------------------
+// Plan de pagos del mes (EN-88)
+//
+// Un solo mes, sin simular los siguientes. Con lo que queda despues de lo
+// esencial se reservan primero los minimos de TODAS las deudas; todo lo que
+// sobre va a la deuda de mayor tasa (la prioridad de la avalancha).
+//
+// estado:
+//   'sin-deudas'    no hay deudas registradas: no hay nada que planear
+//   'insuficiente'  la capacidad no cubre la suma de minimos: no hay plan
+//   'plan'          alcanza; pagos dice cuanto abonarle a cada deuda
+// ---------------------------------------------------------------------------
+
+function calcularPlanPagos(ingresos, gastos, deudas) {
+  const resumen = calcularResumen(ingresos, gastos);
+  const resumenDeudas = calcularResumenDeudas(deudas);
+
+  // Capacidad = ingresos - gastos esenciales del mes, el "disponible" del resumen
+  const capacidad = resumen.disponible;
+
+  // El minimo de una deuda nunca puede ser mayor que lo que se debe: una deuda
+  // de 30.000 con minimo de 50.000 se salda con 30.000 (EN-101).
+  const pagoMinimoTotal = resumenDeudas.ordenadas.reduce(function (total, deuda) {
+    return total + Math.min(deuda.pagoMinimo, deuda.saldo);
+  }, 0);
+
+  const alcanza = capacidad >= pagoMinimoTotal;
+
+  const plan = {
+    totalIngresos: resumen.totalIngresos,
+    totalGastos: resumen.totalGastos,
+    capacidad,
+    pagoMinimoTotal,
+    excedente: alcanza ? capacidad - pagoMinimoTotal : 0,
+    faltante: alcanza ? 0 : pagoMinimoTotal - capacidad,
+    // Lo que queda despues de saldar TODAS las deudas, si es que sobra
+    sobrante: 0,
+    prioridad: resumenDeudas.prioridad,
+    pagos: [],
+    estado: 'plan'
+  };
+
+  if (resumenDeudas.cantidad === 0) {
+    plan.estado = 'sin-deudas';
+    return plan;
+  }
+  if (!alcanza) {
+    plan.estado = 'insuficiente';
+    return plan;
+  }
+
+  // ordenadas viene en orden avalancha: la prioridad es la primera.
+  // Primero el minimo de cada deuda, topado a lo que se debe.
+  plan.pagos = resumenDeudas.ordenadas.map(function (deuda, indice) {
+    const minimo = Math.min(deuda.pagoMinimo, deuda.saldo);
+    return { deuda, esPrioridad: indice === 0, minimo, extra: 0, pago: minimo };
+  });
+
+  // Despues el excedente, en orden de tasa y sin pasar del saldo de cada deuda.
+  // Cuando una queda saldada, lo que sobra pasa a la siguiente: esa cascada ES
+  // el metodo avalancha. Antes el excedente completo iba a la primera deuda
+  // aunque solo se debieran 200.000 de ella, y el plan sugeria abonar de mas
+  // mientras la siguiente recibia solo su minimo (EN-101).
+  let porRepartir = plan.excedente;
+  plan.pagos.forEach(function (item) {
+    if (porRepartir <= 0) {
+      return;
+    }
+    const faltaParaSaldar = item.deuda.saldo - item.pago;
+    const extra = Math.min(faltaParaSaldar, porRepartir);
+    item.extra = extra;
+    item.pago += extra;
+    porRepartir -= extra;
+  });
+
+  // Si alcanzo para saldar todas las deudas, esto es lo que queda libre.
+  plan.sobrante = porRepartir;
+
+  return plan;
 }
 
 // ---------------------------------------------------------------------------

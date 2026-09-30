@@ -214,6 +214,59 @@ svg {
   gap: 0.5rem;
 }
 
+/* Pantallas con sesion (Ingresos y Gastos, Plan de pagos). Varios enlaces no
+ * caben en la barra de pantallas chicas: se deja arrastrar en horizontal, sin
+ * barra de scroll visible. */
+.nav-links {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-links a {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .logo-texto {
+    display: none;
+  }
+
+  .nav-links a {
+    padding: 0.45rem 0.55rem;
+  }
+}
+
+/* Usuario de la sesion */
+.chip-usuario {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  padding: 0.4rem 0.9rem 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--marfil-suave);
+  background: var(--superficie-fuerte);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+}
+
+.chip-usuario .icono {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--terracota-claro);
+}
+
+@media (max-width: 899px) {
+  .chip-usuario {
+    display: none;
+  }
+}
+
 /* ---------------------------------------------------------------------------
  * Secciones de pantalla completa
  *
