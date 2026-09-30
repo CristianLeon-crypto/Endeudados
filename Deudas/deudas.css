@@ -1,0 +1,114 @@
+/* Solo lo exclusivo de la pantalla de Analisis Financiero (modulo Deudas).
+ * Colores, secciones, botones y tarjetas vienen de shared/base.css. */
+
+.encabezado-seccion.izquierda {
+  margin-bottom: 2.25rem;
+}
+
+#error-carga {
+  margin: 0 0 1.5rem;
+}
+
+/* ---- Graficos ---- */
+
+.graficos-grid {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .graficos-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.grafico-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.grafico-encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.grafico-titulo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.grafico-subtitulo {
+  font-size: 0.875rem;
+  color: var(--marfil-suave);
+}
+
+/* Cifras breves sobre cada grafico */
+.grafico-cifras {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+}
+
+.cifra {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.cifra-etiqueta {
+  font-size: 0.78rem;
+  color: var(--marfil-suave);
+}
+
+.cifra-valor {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* El lienzo del grafico: alto fijo para que las tres tarjetas queden parejas */
+.grafico-contenedor {
+  position: relative;
+  height: 250px;
+}
+
+.grafico-vacio {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.925rem;
+  color: var(--marfil-tenue);
+}
+
+.grafico-mensaje {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--marfil-suave);
+  border-top: 1px solid var(--borde);
+}
+
+.acciones-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
