@@ -60,7 +60,16 @@ const MENSAJES_PLAN = {
     if (plan.excedente === 0) {
       return 'Tu capacidad cubre justo los pagos mínimos. Este mes no queda excedente para abonar de más.';
     }
-    return `Después de los mínimos te quedan ${formatearPesos(plan.excedente)}. Todo va a "${plan.prioridad.nombre}", la deuda con la tasa más alta.`;
+    // Con dinero de sobra despues de saldar todo, decirlo en vez de sugerir
+    // abonos que superarian el saldo de las deudas (EN-101).
+    if (plan.sobrante > 0) {
+      return `Después de los mínimos te quedan ${formatearPesos(plan.excedente)}, y con eso saldas todas tus deudas este mes. Te sobran ${formatearPesos(plan.sobrante)}.`;
+    }
+    const recibenExtra = plan.pagos.filter(function (item) { return item.extra > 0; }).length;
+    if (recibenExtra === 1) {
+      return `Después de los mínimos te quedan ${formatearPesos(plan.excedente)}. Todo va a "${plan.prioridad.nombre}", la deuda con la tasa más alta.`;
+    }
+    return `Después de los mínimos te quedan ${formatearPesos(plan.excedente)}. Se reparten empezando por "${plan.prioridad.nombre}", la deuda con la tasa más alta; lo que sobra después de saldarla pasa a la siguiente.`;
   }
 };
 
@@ -70,11 +79,24 @@ function razonDelPago(item, plan) {
   const deuda = item.deuda;
   const prioridad = plan.prioridad;
 
+  // Queda saldada este mes: el pago es todo lo que se debia
+  if (item.pago >= deuda.saldo) {
+    if (item.esPrioridad) {
+      return `Tiene la tasa más alta (${formatearTasa(deuda.tasaEA)}) y este mes la saldas completa: ${formatearPesos(deuda.saldo)}.`;
+    }
+    return `Con lo que sobró después de las deudas de mayor tasa, este mes la saldas completa: ${formatearPesos(deuda.saldo)}.`;
+  }
+
   if (item.esPrioridad) {
-    if (plan.excedente === 0) {
+    if (item.extra === 0) {
       return `Tiene la tasa más alta (${formatearTasa(deuda.tasaEA)}), pero este mes no queda excedente: solo su pago mínimo.`;
     }
-    return `Tiene la tasa más alta (${formatearTasa(deuda.tasaEA)}): recibe su mínimo de ${formatearPesos(deuda.pagoMinimo)} más todo el excedente de ${formatearPesos(plan.excedente)}.`;
+    return `Tiene la tasa más alta (${formatearTasa(deuda.tasaEA)}): recibe su mínimo de ${formatearPesos(item.minimo)} más ${formatearPesos(item.extra)} del excedente.`;
+  }
+
+  // Recibe algo del excedente porque las de mayor tasa ya quedaron saldadas
+  if (item.extra > 0) {
+    return `Recibe su mínimo de ${formatearPesos(item.minimo)} más ${formatearPesos(item.extra)}, que sobraron después de saldar las deudas de mayor tasa.`;
   }
 
   if (deuda.tasaEA === prioridad.tasaEA) {
