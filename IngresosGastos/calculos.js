@@ -336,6 +336,81 @@ function calcularPlanPagos(ingresos, gastos, deudas) {
   return plan;
 }
 
+// ----
+// Analisis financiero (modulo Deudas)
+//
+// Funciones que arman los datos de los graficos de torta de la pantalla
+// Deudas/. Devuelven las cifras que se muestran como titulares y una lista de
+// porciones { etiqueta, valor } lista para Chart.js.
+// ----
+
+// Estado financiero del mes: como se reparte el ingreso entre lo esencial y
+// lo que queda disponible. Con deficit la porcion disponible no existe.
+function calcularEstadoFinanciero(ingresos, gastos) {
+  const resumen = calcularResumen(ingresos, gastos);
+
+  const porciones = [{ etiqueta: 'Gastos esenciales', valor: resumen.totalGastos }];
+  if (resumen.disponible > 0) {
+    porciones.push({ etiqueta: 'Disponible', valor: resumen.disponible });
+  }
+
+  return {
+    totalIngresos: resumen.totalIngresos,
+    totalGastos: resumen.totalGastos,
+    disponible: resumen.disponible,
+    estado: resumen.estado,
+    porciones
+  };
+}
+
+// Distribucion del saldo total entre cada deuda, en orden avalancha
+function calcularDistribucionDeudas(deudas) {
+  const resumen = calcularResumenDeudas(deudas);
+
+  return {
+    saldoTotal: resumen.saldoTotal,
+    cantidad: resumen.cantidad,
+    prioridad: resumen.prioridad,
+    porciones: resumen.ordenadas.map(function (deuda) {
+      return { etiqueta: deuda.nombre, valor: deuda.saldo };
+    })
+  };
+}
+
+// Ratios del mes: ingresos frente a gastos esenciales y gastos hormiga
+function calcularRatios(ingresos, gastos, gastosHormiga) {
+  const totalIngresos = sumarMontos(ingresos);
+  const totalGastos = sumarMontos(gastos);
+  const totalHormiga = calcularResumenHormiga(gastosHormiga).totalMensual;
+
+  return {
+    totalIngresos,
+    totalGastos,
+    totalHormiga,
+    porciones: [
+      { etiqueta: 'Ingresos', valor: totalIngresos },
+      { etiqueta: 'Gastos esenciales', valor: totalGastos },
+      { etiqueta: 'Gastos hormiga', valor: totalHormiga }
+    ]
+  };
+}
+
+// ----
+// Abonos (pagos a deudas)
+// ----
+
+// deudas: lista de { id, nombre, ... } tal como la devuelve la capa de datos.
+function validarAbono(entrada, deudas) {
+  const existe = deudas.some(function (deuda) {
+    return String(deuda.id) === String(entrada.deudaId);
+  });
+
+  return armarResultado({
+    deudaId: existe ? { valor: entrada.deudaId } : { error: 'Selecciona una deuda.' },
+    monto: validarMonto(entrada.monto)
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Formato
 // ---------------------------------------------------------------------------
