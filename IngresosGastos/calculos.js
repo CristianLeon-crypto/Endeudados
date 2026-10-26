@@ -330,9 +330,23 @@ function calcularPlanPagos(ingresos, gastos, deudas) {
     return plan;
   }
 
-  // ordenadas viene en orden avalancha: la prioridad es la primera.
+  const reparto = repartirPagos(resumenDeudas.ordenadas, plan.excedente);
+  plan.pagos = reparto.pagos;
+  // Si alcanzo para saldar todas las deudas, esto es lo que queda libre.
+  plan.sobrante = reparto.sobrante;
+
+  return plan;
+}
+
+// Reparte un mes de pagos. Lo usan el plan del mes (EN-88) y la simulacion
+// hasta quedar libre de deudas (EN-77), para que la regla de la avalancha
+// viva en un solo lugar.
+//
+// ordenadas viene en orden avalancha: la prioridad es la primera. excedente
+// es lo que queda despues de reservar los minimos.
+function repartirPagos(ordenadas, excedente) {
   // Primero el minimo de cada deuda, topado a lo que se debe.
-  plan.pagos = resumenDeudas.ordenadas.map(function (deuda, indice) {
+  const pagos = ordenadas.map(function (deuda, indice) {
     const minimo = Math.min(deuda.pagoMinimo, deuda.saldo);
     return { deuda, esPrioridad: indice === 0, minimo, extra: 0, pago: minimo };
   });
@@ -342,8 +356,8 @@ function calcularPlanPagos(ingresos, gastos, deudas) {
   // el metodo avalancha. Antes el excedente completo iba a la primera deuda
   // aunque solo se debieran 200.000 de ella, y el plan sugeria abonar de mas
   // mientras la siguiente recibia solo su minimo (EN-101).
-  let porRepartir = plan.excedente;
-  plan.pagos.forEach(function (item) {
+  let porRepartir = excedente;
+  pagos.forEach(function (item) {
     if (porRepartir <= 0) {
       return;
     }
@@ -354,10 +368,7 @@ function calcularPlanPagos(ingresos, gastos, deudas) {
     porRepartir -= extra;
   });
 
-  // Si alcanzo para saldar todas las deudas, esto es lo que queda libre.
-  plan.sobrante = porRepartir;
-
-  return plan;
+  return { pagos, sobrante: porRepartir };
 }
 
 // ----
