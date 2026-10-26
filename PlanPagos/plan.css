@@ -120,6 +120,44 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Fecha estimada para quedar libre de deudas (EN-77)
+ * ------------------------------------------------------------------------- */
+
+.plan-libre {
+  margin-top: 1.5rem;
+}
+
+.plan-libre-titulo {
+  font-size: clamp(1.25rem, 2.2vw, 1.6rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--verde-claro);
+}
+
+.plan-libre-detalle {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--marfil-suave);
+}
+
+.plan-libre-supuesto {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--marfil-tenue);
+}
+
+/* Sin fecha posible: el titulo en terracota, como el resto de alertas */
+.plan-libre[data-alerta="si"] {
+  border-color: var(--terracota-claro);
+  background: var(--terracota-fondo);
+}
+
+.plan-libre[data-alerta="si"] .plan-libre-titulo {
+  color: var(--terracota-claro);
+}
+
+/* ---------------------------------------------------------------------------
  * Lista de pagos
  * ------------------------------------------------------------------------- */
 

@@ -82,6 +82,14 @@
                         <span id="mensaje-plan" aria-live="polite">Calculando tu plan…</span>
                     </p>
 
+                    <!-- EN-77: fecha estimada para quedar libre de deudas.
+                         plan.css usa data-alerta cuando no hay fecha posible. -->
+                    <article id="tarjeta-libre" class="tarjeta plan-libre hidden" data-alerta="no" aria-live="polite">
+                        <h2 id="libre-titulo" class="plan-libre-titulo"></h2>
+                        <p id="libre-detalle" class="plan-libre-detalle"></p>
+                        <p id="libre-supuesto" class="plan-libre-supuesto">Es una estimación: supone que tus ingresos y gastos esenciales se mantienen iguales cada mes, que sigues este plan y que no adquieres deudas nuevas.</p>
+                    </article>
+
                     <div id="bloque-pagos" class="tarjeta plan-pagos hidden">
                         <h2 class="plan-pagos-titulo">Tu plan de abonos de este mes</h2>
                         <ol id="lista-pagos" class="lista-pagos"></ol>
