@@ -156,8 +156,8 @@ const MENSAJES_LIBRE = {
   },
   insuficiente: function () {
     return {
-      titulo: 'Con tus pagos actuales, tu deuda no se termina',
-      detalle: 'Tu capacidad de pago no cubre los pagos mínimos, así que no podemos estimar una fecha. Primero hay que cubrir los mínimos.'
+      titulo: 'No podemos estimar una fecha',
+      detalle: 'Tu capacidad de pago no cubre los pagos mínimos de tus deudas. Primero hay que cubrir los mínimos.'
     };
   }
 };
@@ -179,6 +179,8 @@ function renderizarLibre() {
   const textos = mensajes(simulacion);
   porId('libre-titulo').textContent = textos.titulo;
   porId('libre-detalle').textContent = textos.detalle;
+  // La nota habla de "seguir este plan": sin plan (no cubre los minimos) no aplica
+  porId('libre-supuesto').classList.toggle('hidden', simulacion.estado === 'insuficiente');
   tarjeta.dataset.alerta = simulacion.estado === 'libre' ? 'no' : 'si';
   tarjeta.classList.remove('hidden');
 }
