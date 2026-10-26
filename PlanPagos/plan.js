@@ -123,6 +123,64 @@ function renderizar() {
   renderizarResumen(plan, hayDeficit);
   porId('mensaje-plan').textContent = MENSAJES_PLAN[estadoPlan](plan);
   renderizarPagos(estadoPlan === 'plan' ? plan.pagos : [], plan);
+  renderizarLibre();
+}
+
+// Textos de la tarjeta "cuando quedo libre" (EN-77), uno por estado de
+// simularLibreDeDeudas(). Sin deudas la tarjeta no se muestra.
+const MENSAJES_LIBRE = {
+  libre: function (simulacion) {
+    if (simulacion.meses === 1) {
+      return {
+        titulo: 'Estimado: quedas libre de deudas este mes',
+        detalle: 'Con el plan de este mes saldas todas tus deudas, sin pagar más intereses.'
+      };
+    }
+    return {
+      titulo: `Estimado: quedas libre de deudas en ${nombreDelPeriodo(simulacion.periodoLibre)}`,
+      detalle: `En ${simulacion.meses} meses siguiendo este plan. En ese tiempo pagarías ${formatearPesos(simulacion.totalIntereses)} en intereses.`
+    };
+  },
+  'no-termina': function (simulacion) {
+    if (simulacion.motivo === 'plazo') {
+      return {
+        titulo: 'Con tus pagos actuales no terminas de pagar en los próximos 50 años',
+        detalle: 'Tu pago cubre los intereses, pero el saldo baja tan despacio que el plan no es realista. Abonar un poco más cada mes acorta mucho el plazo.'
+      };
+    }
+    const primerMes = simulacion.cronograma[0];
+    return {
+      titulo: 'Con tus pagos actuales, tu deuda no se termina',
+      detalle: `Este mes abonas ${formatearPesos(primerMes.pagado)}, pero lo que sigues debiendo genera ${formatearPesos(primerMes.interes)} de intereses: el saldo no baja.`
+    };
+  },
+  insuficiente: function () {
+    return {
+      titulo: 'Con tus pagos actuales, tu deuda no se termina',
+      detalle: 'Tu capacidad de pago no cubre los pagos mínimos, así que no podemos estimar una fecha. Primero hay que cubrir los mínimos.'
+    };
+  }
+};
+
+function renderizarLibre() {
+  const tarjeta = porId('tarjeta-libre');
+  if (!estado.cargado) {
+    tarjeta.classList.add('hidden');
+    return;
+  }
+
+  const simulacion = simularLibreDeDeudas(estado.ingresos, estado.gastos, estado.deudas, periodo);
+  const mensajes = MENSAJES_LIBRE[simulacion.estado];
+  if (!mensajes) {
+    tarjeta.classList.add('hidden');
+    return;
+  }
+
+  const textos = mensajes(simulacion);
+  porId('libre-titulo').textContent = textos.titulo;
+  porId('libre-detalle').textContent = textos.detalle;
+  tarjeta.dataset.alerta = simulacion.estado === 'libre' ? 'no' : 'si';
+  tarjeta.classList.remove('hidden');
 }
 
 function renderizarResumen(plan, hayDeficit) {
