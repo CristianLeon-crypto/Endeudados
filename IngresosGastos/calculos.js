@@ -487,6 +487,56 @@ function simularLibreDeDeudas(ingresos, gastos, deudas, periodoInicial) {
   return resultado;
 }
 
+// ---------------------------------------------------------------------------
+// Cronograma resumido (EN-89)
+//
+// Una fila por deuda a partir del cronograma de simularLibreDeDeudas(): en que
+// mes queda en cero, cuanto se le abona y cuantos intereses genera. Van en el
+// orden en que se saldan, que no siempre es el de la tasa: una deuda chica
+// puede saldarse con su minimo antes que la prioridad. Las que no alcanzan a
+// saldarse dentro de la simulacion van al final con periodoSaldada en null.
+// ---------------------------------------------------------------------------
+
+function resumirCronograma(simulacion) {
+  const porDeuda = new Map();
+
+  simulacion.cronograma.forEach(function (mes, indice) {
+    mes.deudas.forEach(function (fila) {
+      if (!porDeuda.has(fila.id)) {
+        porDeuda.set(fila.id, {
+          id: fila.id,
+          nombre: fila.nombre,
+          periodoSaldada: null,
+          meses: null,
+          totalPagado: 0,
+          totalIntereses: 0
+        });
+      }
+      const resumen = porDeuda.get(fila.id);
+      resumen.totalPagado += fila.pago;
+      resumen.totalIntereses += fila.interes;
+      if (fila.saldo === 0) {
+        resumen.periodoSaldada = mes.periodo;
+        resumen.meses = indice + 1;
+      }
+    });
+  });
+
+  // sort es estable: con el mismo mes queda el orden avalancha del primer mes
+  const deudas = Array.from(porDeuda.values()).sort(function (a, b) {
+    if (a.meses === null || b.meses === null) {
+      return (a.meses === null) - (b.meses === null);
+    }
+    return a.meses - b.meses;
+  });
+
+  return {
+    deudas,
+    totalPagado: simulacion.totalPagado,
+    totalIntereses: simulacion.totalIntereses
+  };
+}
+
 // ----
 // Analisis financiero (modulo Deudas)
 //
