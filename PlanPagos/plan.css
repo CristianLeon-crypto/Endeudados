@@ -391,6 +391,15 @@
   text-transform: uppercase;
 }
 
+/* Mes con una sola deuda: su nombre va debajo del mes, en la misma fila */
+.fila-mes-deuda {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--marfil-suave);
+}
+
 .tabla-mes-a-mes tbody tr:not(.fila-mes) th,
 .tabla-mes-a-mes tbody tr:not(.fila-mes) td {
   font-size: 0.875rem;

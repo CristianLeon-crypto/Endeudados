@@ -204,10 +204,11 @@ function renderizarLibre(simulacion) {
 
 // Solo con fecha estimada. Si el interes se come el pago, si no cubre los
 // minimos o si tardaria mas de 50 anios no hay camino que mostrar: la tarjeta
-// de EN-77 ya explica por que.
+// de EN-77 ya explica por que. Si todo se salda este mes tampoco: el plan de
+// arriba ya es todo el camino.
 function renderizarCronograma(simulacion) {
   const bloque = porId('bloque-cronograma');
-  if (!simulacion || simulacion.estado !== 'libre') {
+  if (!simulacion || simulacion.estado !== 'libre' || simulacion.meses === 1) {
     bloque.classList.add('hidden');
     return;
   }
@@ -289,13 +290,24 @@ function renderizarMesAMes(simulacion) {
 
 // Un tbody por mes: la fila del mes con los totales y una fila por deuda. Solo
 // salen las deudas que siguen vigentes ese mes; la que llega a cero se marca.
+// Con una sola deuda sus cifras son las del mes: no se repite la fila, el
+// nombre va en la fila del mes.
 function crearCuerpoMes(mes) {
   const cuerpo = document.createElement('tbody');
+  const unaSola = mes.deudas.length === 1;
 
   const filaMes = document.createElement('tr');
   filaMes.className = 'fila-mes';
   const nombreMes = crearCelda('th', nombreDelPeriodo(mes.periodo));
   nombreMes.scope = 'rowgroup';
+  if (unaSola) {
+    const deuda = mes.deudas[0];
+    const nombreDeuda = document.createElement('span');
+    nombreDeuda.className = 'fila-mes-deuda';
+    nombreDeuda.textContent = deuda.nombre;
+    nombreMes.append(nombreDeuda);
+    marcarSiSaldada(filaMes, nombreDeuda, deuda);
+  }
   filaMes.append(
     nombreMes,
     crearCelda('td', formatearPesos(mes.pagado), 'Abono', 'celda-monto'),
@@ -303,18 +315,15 @@ function crearCuerpoMes(mes) {
     crearCelda('td', formatearPesos(mes.saldo), 'Saldo al cierre', 'celda-monto')
   );
   cuerpo.append(filaMes);
+  if (unaSola) {
+    return cuerpo;
+  }
 
   mes.deudas.forEach(function (deuda) {
     const fila = document.createElement('tr');
     const nombre = crearCelda('th', deuda.nombre, null, 'celda-deuda');
     nombre.scope = 'row';
-    if (deuda.saldo === 0) {
-      fila.classList.add('fila-saldada');
-      const chip = document.createElement('span');
-      chip.className = 'chip-saldada';
-      chip.textContent = 'Saldada';
-      nombre.append(' ', chip);
-    }
+    marcarSiSaldada(fila, nombre, deuda);
     fila.append(
       nombre,
       crearCelda('td', formatearPesos(deuda.pago), 'Abono', 'celda-monto'),
@@ -325,6 +334,18 @@ function crearCuerpoMes(mes) {
   });
 
   return cuerpo;
+}
+
+// La deuda que llega a cero ese mes lleva la marca "Saldada" junto al nombre
+function marcarSiSaldada(fila, nombre, deuda) {
+  if (deuda.saldo !== 0) {
+    return;
+  }
+  fila.classList.add('fila-saldada');
+  const chip = document.createElement('span');
+  chip.className = 'chip-saldada';
+  chip.textContent = 'Saldada';
+  nombre.append(' ', chip);
 }
 
 function conectarCronograma() {
