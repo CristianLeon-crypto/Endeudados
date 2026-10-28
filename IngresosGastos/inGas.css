@@ -376,7 +376,8 @@ li.registro:last-child {
   white-space: nowrap;
 }
 
-.btn-eliminar {
+.btn-eliminar,
+.btn-editar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -397,14 +398,46 @@ li.registro:last-child {
   border-color: rgba(224, 145, 95, 0.3);
 }
 
-.btn-eliminar:disabled {
+.btn-editar:hover {
+  color: var(--verde-claro);
+  background: var(--superficie-fuerte);
+  border-color: var(--borde);
+}
+
+.btn-eliminar:disabled,
+.btn-editar:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-eliminar .icono {
+.btn-eliminar .icono,
+.btn-editar .icono {
   width: 1.15rem;
   height: 1.15rem;
+}
+
+/* Editar y eliminar van juntos y ocupan la celda que antes tenia un solo boton */
+.registro-acciones {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+/* Registro que se esta corrigiendo en el formulario. No depende solo del color:
+ * la marca "(editando)" tambien se lee, y el formulario cambia de titulo. */
+.registro-editando .registro-concepto {
+  color: var(--terracota-claro);
+}
+
+.registro-editando .registro-concepto::after {
+  content: " (editando)";
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.formulario-editando {
+  border-color: rgba(224, 145, 95, 0.45);
 }
 
 /* En celular el monto baja debajo del concepto para no apretar el texto */
@@ -419,7 +452,7 @@ li.registro:last-child {
 
   li.registro .registro-info { grid-area: info; }
   li.registro .registro-monto { grid-area: monto; }
-  li.registro .btn-eliminar { grid-area: eliminar; }
+  li.registro .registro-acciones { grid-area: eliminar; }
 }
 
 .lista-vacia {
@@ -557,8 +590,9 @@ li.registro:last-child {
 }
 
 .celda-accion {
-  width: 3rem;
+  width: 1%;
   text-align: right;
+  white-space: nowrap;
 }
 
 .tabla-datos .registro-concepto {
@@ -645,7 +679,10 @@ li.registro:last-child {
     padding: 0;
   }
 
-  .tabla-datos td[data-titulo="Concepto"],
+  .tabla-datos td[data-titulo="Concepto"] {
+    padding-right: 6rem;
+  }
+
   .tabla-datos td[data-titulo="Deuda"] {
     padding-right: 3rem;
   }

@@ -24,6 +24,11 @@ const estado = {
   deudas: []
 };
 
+
+// Registro que se esta editando en cada formulario: { ingreso: 12, gasto: null, ... }.
+// Mientras hay uno, el formulario de ese tipo guarda cambios en vez de agregar.
+const edicion = {};
+
 // Lo que cambia entre una entidad y otra. El resto del flujo (validar, guardar,
 // pintar, eliminar) es el mismo para las cuatro.
 //
@@ -42,13 +47,15 @@ const tipos = {
     validar: function (entrada) { return validarIngreso(entrada); },
     agregar: agregarIngreso,
     eliminar: eliminarIngreso,
+    actualizar: actualizarIngreso,
     plantilla: 'plantilla-registro',
     llenarFila: llenarFilaMovimiento,
     etiqueta: function (registro) { return registro.concepto; },
     total: function (registros) { return formatearPesos(sumarMontos(registros)); },
     singular: 'ingreso',
     textoAgregado: 'Ingreso agregado. Ingresos del mes:',
-    textoEliminado: 'Ingreso eliminado.'
+    textoEliminado: 'Ingreso eliminado.',
+    textoActualizado: 'Ingreso actualizado. Ingresos del mes:'
   },
   gasto: {
     coleccion: 'gastos',
@@ -58,13 +65,15 @@ const tipos = {
     validar: function (entrada) { return validarGasto(entrada, estado.categorias); },
     agregar: agregarGasto,
     eliminar: eliminarGasto,
+    actualizar: actualizarGasto,
     plantilla: 'plantilla-registro',
     llenarFila: llenarFilaMovimiento,
     etiqueta: function (registro) { return registro.concepto; },
     total: function (registros) { return formatearPesos(sumarMontos(registros)); },
     singular: 'gasto',
     textoAgregado: 'Gasto agregado. Gastos esenciales del mes:',
-    textoEliminado: 'Gasto eliminado.'
+    textoEliminado: 'Gasto eliminado.',
+    textoActualizado: 'Gasto actualizado. Gastos esenciales del mes:'
   },
   hormiga: {
     coleccion: 'gastosHormiga',
@@ -75,13 +84,15 @@ const tipos = {
     validar: function (entrada) { return validarGastoHormiga(entrada); },
     agregar: agregarGastoHormiga,
     eliminar: eliminarGastoHormiga,
+    actualizar: actualizarGastoHormiga,
     plantilla: 'plantilla-hormiga',
     llenarFila: llenarFilaHormiga,
     etiqueta: function (registro) { return registro.concepto; },
     total: function (registros) { return formatearPesos(calcularResumenHormiga(registros).totalMensual); },
     singular: 'gasto hormiga',
     textoAgregado: 'Gasto hormiga agregado. Al mes suman:',
-    textoEliminado: 'Gasto hormiga eliminado.'
+    textoEliminado: 'Gasto hormiga eliminado.',
+    textoActualizado: 'Gasto hormiga actualizado. Al mes suman:'
   },
   deuda: {
     coleccion: 'deudas',
@@ -250,6 +261,17 @@ function crearFila(tipo, registro, indice) {
   fila.querySelector('.btn-eliminar')
     .setAttribute('aria-label', `Eliminar ${config.singular}: ${config.etiqueta(registro)}`);
 
+
+  // Las deudas no se editan: su plantilla no trae este boton
+  const botonEditar = fila.querySelector('.btn-editar');
+  if (botonEditar) {
+    botonEditar.setAttribute('aria-label', `Editar ${config.singular}: ${config.etiqueta(registro)}`);
+  }
+
+  if (String(edicion[tipo]) === String(registro.id)) {
+    fila.classList.add('registro-editando');
+  }
+
   return fila;
 }
 
@@ -326,6 +348,65 @@ function limpiarErrorCampo(tipo, campo) {
   ocultar(porId(`error-${tipo}-${campo}`));
 }
 
+// Cambia los textos del formulario entre "registrar" y "editar".
+function ponerModoFormulario(tipo, editando) {
+  const config = tipos[tipo];
+  const form = porId(`form-${tipo}`);
+  const titulo = form.querySelector('.formulario-titulo');
+  const textoBoton = form.querySelector('button[type="submit"] .texto-boton');
+
+  // Se guarda el texto original la primera vez para poder restaurarlo
+  if (!titulo.dataset.original) {
+    titulo.dataset.original = titulo.textContent;
+    textoBoton.dataset.original = textoBoton.textContent;
+  }
+
+  titulo.textContent = editando ? `Editar ${config.singular}` : titulo.dataset.original;
+  textoBoton.textContent = editando ? 'Guardar cambios' : textoBoton.dataset.original;
+  porId(`cancelar-${tipo}`).classList.toggle('hidden', !editando);
+  form.classList.toggle('formulario-editando', editando);
+}
+
+// Carga el registro en el formulario de su seccion y lo deja listo para corregir.
+function entrarEnEdicion(tipo, registro) {
+  const config = tipos[tipo];
+
+  ocultar(porId(`error-${tipo}-general`));
+  edicion[tipo] = registro.id;
+  ponerModoFormulario(tipo, true);
+
+  config.campos.forEach(function (campo) {
+    limpiarErrorCampo(tipo, campo);
+    const valor = registro[campo];
+    porId(`${tipo}-${campo}`).value = config.camposMonto.includes(campo) ? formatearMiles(valor) : valor;
+  });
+
+  renderizar();
+  porId(`${tipo}-${config.campos[0]}`).focus();
+  anunciar(`Editando ${config.singular}: ${config.etiqueta(registro)}.`);
+}
+
+// Vuelve el formulario al modo "registrar". Con devolverFoco el foco regresa al
+// boton de editar de la fila que se estaba corrigiendo.
+function salirDeEdicion(tipo, devolverFoco) {
+  const config = tipos[tipo];
+  const id = edicion[tipo];
+
+  edicion[tipo] = null;
+  ponerModoFormulario(tipo, false);
+  porId(`form-${tipo}`).reset();
+  config.campos.forEach(function (campo) { limpiarErrorCampo(tipo, campo); });
+  ocultar(porId(`error-${tipo}-general`));
+  renderizar();
+
+  if (devolverFoco) {
+    const boton = porId(`lista-${config.dom}`).querySelector(`[data-id="${id}"] .btn-editar`);
+    if (boton) {
+      boton.focus();
+    }
+  }
+}
+
 function conectarFormulario(tipo) {
   const config = tipos[tipo];
   const form = porId(`form-${tipo}`);
@@ -349,6 +430,21 @@ function conectarFormulario(tipo) {
     input.addEventListener('input', function () { limpiarErrorCampo(tipo, campo); });
     input.addEventListener('change', function () { limpiarErrorCampo(tipo, campo); });
   });
+
+  // Cancelar la edicion (boton o tecla Escape). Las deudas no lo tienen.
+  const botonCancelar = porId(`cancelar-${tipo}`);
+  if (botonCancelar) {
+    const cancelar = function () {
+      salirDeEdicion(tipo, true);
+      anunciar('Edición cancelada.');
+    };
+    botonCancelar.addEventListener('click', cancelar);
+    form.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && edicion[tipo] != null) {
+        cancelar();
+      }
+    });
+  }
 
   form.addEventListener('submit', async function (event) {
     event.preventDefault();
@@ -377,17 +473,46 @@ function conectarFormulario(tipo) {
       return;
     }
 
+    const idEdicion = edicion[tipo];
+    const editando = idEdicion !== undefined && idEdicion !== null;
+
+    // Si no cambio nada no se hace la llamada a la base
+    if (editando) {
+      const original = estado[config.coleccion].find(function (r) {
+        return String(r.id) === String(idEdicion);
+      });
+      const sinCambios = original && config.campos.every(function (campo) {
+        return String(original[campo]) === String(resultado.datos[campo]);
+      });
+      if (sinCambios) {
+        salirDeEdicion(tipo, true);
+        anunciar('No hiciste cambios.');
+        return;
+      }
+    }
+
     boton.disabled = true;
 
     try {
-      const registro = await config.agregar(resultado.datos);
-      estado[config.coleccion].push(registro);
-      renderizar();
-      form.reset();
-      porId(`${tipo}-${config.campos[0]}`).focus();
-      anunciar(`${config.textoAgregado} ${config.total(estado[config.coleccion])}.`);
+      if (editando) {
+        const actualizado = await config.actualizar(idEdicion, resultado.datos);
+        estado[config.coleccion] = estado[config.coleccion].map(function (r) {
+          return String(r.id) === String(idEdicion) ? actualizado : r;
+        });
+        salirDeEdicion(tipo, true);
+        anunciar(`${config.textoActualizado} ${config.total(estado[config.coleccion])}.`);
+      } else {
+        const registro = await config.agregar(resultado.datos);
+        estado[config.coleccion].push(registro);
+        renderizar();
+        form.reset();
+        porId(`${tipo}-${config.campos[0]}`).focus();
+        anunciar(`${config.textoAgregado} ${config.total(estado[config.coleccion])}.`);
+      }
     } catch (error) {
-      mostrar(errorGeneral, 'No se pudo guardar el registro. Intenta nuevamente.');
+      mostrar(errorGeneral, editando
+        ? 'No se pudieron guardar los cambios. Intenta nuevamente.'
+        : 'No se pudo guardar el registro. Intenta nuevamente.');
       console.error(error);
     } finally {
       boton.disabled = false;
@@ -407,6 +532,19 @@ function conectarLista(tipo) {
   // Un solo listener para toda la lista, porque las filas se vuelven a crear
   // cada vez que se pinta.
   contenedor.addEventListener('click', async function (event) {
+    const botonEditar = event.target.closest('.btn-editar');
+    if (botonEditar) {
+      const idEditar = botonEditar.closest('.registro').dataset.id;
+      const aEditar = estado[config.coleccion].find(function (registro) {
+        return String(registro.id) === String(idEditar);
+      });
+      if (aEditar) {
+        ocultar(errorLista);
+        entrarEnEdicion(tipo, aEditar);
+      }
+      return;
+    }
+
     const boton = event.target.closest('.btn-eliminar');
     if (!boton) {
       return;
@@ -421,6 +559,10 @@ function conectarLista(tipo) {
       estado[config.coleccion] = estado[config.coleccion].filter(function (registro) {
         return String(registro.id) !== String(id);
       });
+      // Si se elimina el registro que se estaba editando, se cancela la edicion
+      if (String(edicion[tipo]) === String(id)) {
+        salirDeEdicion(tipo, false);
+      }
       renderizar();
       // La fila (y su boton) ya no existen: el foco pasa al titulo de la lista
       porId(`titulo-lista-${config.dom}`).focus();
