@@ -271,6 +271,104 @@ test('libre: un pago apenas mayor al interes termina antes de 50 anios', functio
   assert.ok(resultado.meses > 500 && resultado.meses < 600);
 });
 
+// ---------------------------------------------------------------------------
+// Cronograma (EN-89)
+// ---------------------------------------------------------------------------
+
+test('cronograma: una deuda sola, verificada a mano', function () {
+  // El mismo caso de 'libre: una deuda sola': se salda en el mes 4
+  const mes = mesCon(2300000, 2000000);
+  const simulacion = simularLibreDeDeudas(mes.ingresos, mes.gastos, [
+    deuda('Tarjeta', 1000000, EA_UNO_POR_CIENTO_MENSUAL, 50000)
+  ], '2026-11');
+
+  assert.deepEqual(resumirCronograma(simulacion), {
+    deudas: [{
+      id: 'Tarjeta',
+      nombre: 'Tarjeta',
+      periodoSaldada: '2027-02',
+      meses: 4,
+      totalPagado: 1012181,
+      totalIntereses: 12181
+    }],
+    totalPagado: 1012181,
+    totalIntereses: 12181
+  });
+});
+
+test('cronograma: dice en que mes se salda cada deuda en cascada', function () {
+  // Mes 1: la tarjeta se salda con 100.000 y sin intereses; desde el mes 2
+  // todo el pago va al credito, que se salda en el ultimo mes.
+  const mes = mesCon(1200000, 1000000);
+  const simulacion = simularLibreDeDeudas(mes.ingresos, mes.gastos, [
+    deuda('Credito', 500000, 15, 50000),
+    deuda('Tarjeta', 100000, 40, 10000)
+  ], '2026-11');
+  const resumen = resumirCronograma(simulacion);
+
+  assert.deepEqual(resumen.deudas.map(function (fila) { return [fila.nombre, fila.periodoSaldada, fila.meses]; }), [
+    ['Tarjeta', '2026-11', 1],
+    ['Credito', simulacion.periodoLibre, simulacion.meses]
+  ]);
+  assert.equal(resumen.deudas[0].totalPagado, 100000);
+  assert.equal(resumen.deudas[0].totalIntereses, 0);
+});
+
+test('cronograma: ordena por el mes en que se saldan, no por la tasa', function () {
+  // El celular tiene menor tasa, pero su minimo es todo su saldo: se salda en
+  // el mes 1 mientras la tarjeta (prioridad) sigue.
+  const mes = mesCon(1500000, 1000000);
+  const simulacion = simularLibreDeDeudas(mes.ingresos, mes.gastos, [
+    deuda('Tarjeta', 3000000, 40, 100000),
+    deuda('Celular', 90000, 20, 90000)
+  ], '2026-11');
+
+  assert.deepEqual(resumirCronograma(simulacion).deudas.map(function (fila) { return [fila.nombre, fila.meses]; }), [
+    ['Celular', 1],
+    ['Tarjeta', simulacion.meses]
+  ]);
+});
+
+test('cronograma: lo de cada deuda suma el total de la simulacion', function () {
+  const mes = mesCon(4500000, 3000000);
+  const simulacion = simularLibreDeDeudas(mes.ingresos, mes.gastos, [
+    deuda('Tarjeta', 4000000, 42, 200000),
+    deuda('Libre inversion', 8000000, 24, 300000),
+    deuda('Celular', 900000, 30, 90000)
+  ], '2026-11');
+  const resumen = resumirCronograma(simulacion);
+
+  const sumar = function (campo) {
+    return resumen.deudas.reduce(function (total, fila) { return total + fila[campo]; }, 0);
+  };
+  assert.equal(simulacion.estado, 'libre');
+  assert.equal(sumar('totalIntereses'), simulacion.totalIntereses);
+  assert.equal(sumar('totalPagado'), simulacion.totalPagado);
+  assert.ok(simulacion.totalIntereses > 0);
+  // Todas se saldan y la ultima es el mes en que quedas libre
+  assert.ok(resumen.deudas.every(function (fila) { return fila.periodoSaldada !== null; }));
+  assert.equal(resumen.deudas[resumen.deudas.length - 1].periodoSaldada, simulacion.periodoLibre);
+});
+
+test('cronograma: sin simulacion no hay filas', function () {
+  const mes = mesCon(3000000, 2000000);
+  const simulacion = simularLibreDeDeudas(mes.ingresos, mes.gastos, [], '2026-11');
+
+  assert.deepEqual(resumirCronograma(simulacion), { deudas: [], totalPagado: 0, totalIntereses: 0 });
+});
+
+test('cronograma: si no se termina en 50 anios la deuda queda sin mes', function () {
+  const mes = mesCon(2099100, 2000000);
+  const simulacion = simularLibreDeDeudas(mes.ingresos, mes.gastos, [
+    deuda('Hipotecario', 10000000, EA_UNO_POR_CIENTO_MENSUAL, 50000)
+  ], '2026-11');
+  const [fila] = resumirCronograma(simulacion).deudas;
+
+  assert.equal(simulacion.motivo, 'plazo');
+  assert.equal(fila.periodoSaldada, null);
+  assert.equal(fila.meses, null);
+});
+
 test('sumarMesesAPeriodo cruza de anio', function () {
   assert.equal(sumarMesesAPeriodo('2026-11', 0), '2026-11');
   assert.equal(sumarMesesAPeriodo('2026-11', 2), '2027-01');
