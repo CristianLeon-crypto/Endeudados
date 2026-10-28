@@ -434,6 +434,30 @@ function conectarLista(tipo) {
 }
 
 // ---------------------------------------------------------------------------
+// Cerrar sesion
+// ---------------------------------------------------------------------------
+
+// Cierra la sesion en Supabase y vuelve al login. Si signOut falla se deja el
+// boton activo para que el usuario pueda intentar de nuevo, en vez de dejarlo
+// varado con la sesion a medio cerrar.
+function conectarCerrarSesion() {
+  const boton = porId('btn-cerrar-sesion');
+
+  boton.addEventListener('click', async function () {
+    boton.disabled = true;
+
+    try {
+      await cerrarSesion();
+      window.location.replace('../LoginRegistro/loRe.html');
+    } catch (error) {
+      boton.disabled = false;
+      anunciar('No se pudo cerrar la sesión. Intenta nuevamente.');
+      console.error(error);
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Inicio
 // ---------------------------------------------------------------------------
 
@@ -479,6 +503,7 @@ async function iniciar() {
     conectarFormulario(tipo);
     conectarLista(tipo);
   });
+  conectarCerrarSesion();
 
   // Mientras llegan los datos se muestra todo en cero y no se deja enviar nada,
   // para que un registro nuevo no se pierda cuando termine la carga.

@@ -6,6 +6,30 @@
   margin-bottom: 2.25rem;
 }
 
+@media (max-width: 899px) {
+  .chip-usuario {
+    display: none;
+  }
+}
+
+/* Cerrar sesion: boton fantasma junto al chip del usuario. En celular se
+ * queda solo el icono, para no competir por espacio con la barra de
+ * secciones que ya se arrastra en horizontal. */
+.btn-cerrar-sesion {
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .btn-cerrar-sesion {
+    padding: 0.55rem;
+  }
+
+  .texto-cerrar-sesion {
+    display: none;
+  }
+}
 /* ---------------------------------------------------------------------------
  * Resumen (EN-6)
  * ------------------------------------------------------------------------- */

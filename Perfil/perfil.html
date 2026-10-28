@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endeudados - Mi perfil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="perfil.css">
+</head>
+<body>
+
+  <header class="navbar">
+    <a href="../index.html" class="logo">
+      <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
+        <defs>
+          <linearGradient id="logo-degradado" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#1C1C1C" />
+            <stop offset="1" stop-color="#28B660" />
+          </linearGradient>
+        </defs>
+        <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#logo-degradado)" stroke="#F3ECDE" stroke-opacity="0.18" />
+        <rect x="9" y="11" width="22" height="4" rx="2" fill="#F3ECDE" />
+        <rect x="9" y="18" width="15" height="4" rx="2" fill="#F3ECDE" />
+        <rect x="9" y="25" width="8" height="4" rx="2" fill="#A9501C" />
+      </svg>
+      <span class="logo-texto">Endeudados</span>
+    </a>
+    <nav class="nav-links" aria-label="Secciones">
+      <a href="../IngresosGastos/inGas.html">Ingresos y gastos</a>
+      <a href="../PlanPagos/plan.html">Plan de pagos</a>
+      <a href="perfil.html" aria-current="page">Mi perfil</a>
+    </nav>
+    <div class="nav-buttons">
+      <button type="button" id="btn-cerrar-sesion" class="btn btn-ghost">
+        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></svg>
+        <span>Cerrar sesión</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="seccion">
+    <div class="contenedor contenedor-perfil">
+
+      <div class="encabezado-seccion izquierda">
+        <h1 class="titulo-seccion">Mi <span class="acento-serif">perfil</span></h1>
+        <p class="texto-seccion">Revisa los datos con los que te registraste y corrígelos si algo quedó mal escrito.</p>
+      </div>
+
+      <p id="error-carga" class="error-msg hidden" role="alert"></p>
+
+      <section class="tarjeta perfil-card" aria-labelledby="titulo-datos">
+        <div class="perfil-cabecera">
+          <span id="perfil-iniciales" class="perfil-avatar" aria-hidden="true">?</span>
+          <div>
+            <h2 id="titulo-datos" class="perfil-nombre">Cargando tu perfil…</h2>
+            <p id="perfil-correo-cabecera" class="perfil-correo"></p>
+          </div>
+        </div>
+
+        <form id="form-perfil" novalidate>
+          <div class="form-group">
+            <label for="perfil-nombre">Nombre completo</label>
+            <input type="text" id="perfil-nombre" autocomplete="name" required disabled aria-describedby="error-perfil-nombre">
+            <p id="error-perfil-nombre" class="error-campo hidden"></p>
+          </div>
+
+          <div class="form-group">
+            <label for="perfil-cedula">Número de cédula</label>
+            <input type="text" id="perfil-cedula" inputmode="numeric" autocomplete="off" required disabled aria-describedby="error-perfil-cedula">
+            <p id="error-perfil-cedula" class="error-campo hidden"></p>
+          </div>
+
+          <div class="form-group">
+            <label for="perfil-email">Correo electrónico</label>
+            <input type="email" id="perfil-email" readonly disabled aria-describedby="ayuda-email">
+            <p id="ayuda-email" class="ayuda-campo">El correo es el de tu cuenta y no se puede cambiar desde aquí.</p>
+          </div>
+
+          <div class="perfil-acciones">
+            <button type="submit" id="btn-guardar" class="btn btn-primary" disabled>Guardar cambios</button>
+            <button type="button" id="btn-descartar" class="btn btn-outline" disabled>Descartar cambios</button>
+          </div>
+
+          <p id="perfil-error" class="error-msg hidden" role="alert"></p>
+          <p id="perfil-ok" class="success-msg hidden" role="status"></p>
+        </form>
+      </section>
+
+      <section class="tarjeta zona-peligro" aria-labelledby="titulo-eliminar">
+        <h2 id="titulo-eliminar" class="zona-peligro-titulo">Eliminar mi cuenta</h2>
+        <p class="zona-peligro-texto">Se borran para siempre tu perfil, tus ingresos, gastos, gastos hormiga, deudas y abonos, y ya no vas a poder iniciar sesión con este correo. No se puede deshacer.</p>
+        <p class="ayuda-campo">Es tu derecho como titular de los datos (Ley 1581 de 2012, artículos 8 y 9).</p>
+
+        <form id="form-eliminar" novalidate>
+          <div class="form-group">
+            <label for="confirmar-eliminar">Para confirmar, escribe <strong>ELIMINAR</strong></label>
+            <input type="text" id="confirmar-eliminar" autocomplete="off" spellcheck="false" disabled>
+          </div>
+          <button type="submit" id="btn-eliminar" class="btn btn-peligro" disabled>Eliminar mi cuenta para siempre</button>
+          <p id="eliminar-error" class="error-msg hidden" role="alert"></p>
+        </form>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/supabase.js"></script>
+  <script src="perfil.js"></script>
+</body>
+</html>
