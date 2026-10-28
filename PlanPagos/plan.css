@@ -259,6 +259,246 @@
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Cronograma hasta quedar libre de deudas (EN-89)
+ * ------------------------------------------------------------------------- */
+
+.plan-cronograma {
+  margin-top: 1.5rem;
+}
+
+.cronograma-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+/* Resumido / Mes a mes: dos botones pegados, el activo en verde */
+.cronograma-vistas {
+  display: inline-flex;
+  padding: 0.2rem;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+}
+
+.cronograma-vista {
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--marfil-suave);
+  background: none;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.cronograma-vista:hover {
+  color: var(--marfil);
+}
+
+.cronograma-vista[aria-pressed="true"] {
+  color: var(--verde-tinta);
+  background: var(--verde-500);
+}
+
+.cronograma-vista:focus-visible {
+  outline: 2px solid var(--verde-claro);
+  outline-offset: 2px;
+}
+
+.cronograma-total {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--marfil-suave);
+}
+
+.cronograma-tabla {
+  margin-top: 0.75rem;
+}
+
+.tabla-cronograma {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.925rem;
+}
+
+.tabla-cronograma thead th {
+  padding: 0.85rem 0.75rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--marfil-suave);
+  border-bottom: 1px solid var(--borde);
+}
+
+.tabla-cronograma tbody th,
+.tabla-cronograma tbody td,
+.tabla-cronograma tfoot th,
+.tabla-cronograma tfoot td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--borde);
+}
+
+.tabla-cronograma th:first-child,
+.tabla-cronograma td:first-child {
+  padding-left: 0;
+}
+
+.tabla-cronograma th:last-child,
+.tabla-cronograma td:last-child {
+  padding-right: 0;
+}
+
+.tabla-cronograma .celda-monto {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla-cronograma .celda-deuda {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tabla-cronograma .celda-interes {
+  color: var(--terracota-claro);
+}
+
+/* El total: los intereses que vas a pagar en todo el camino */
+.tabla-cronograma tfoot th,
+.tabla-cronograma tfoot td {
+  font-weight: 800;
+  border-bottom: none;
+  border-top: 2px solid var(--borde-input);
+}
+
+/* Mes a mes: la fila del mes separa los grupos; las deudas van debajo */
+.tabla-mes-a-mes .fila-mes th,
+.tabla-mes-a-mes .fila-mes td {
+  padding-top: 1.1rem;
+  font-weight: 700;
+  background: var(--superficie);
+}
+
+/* 'octubre de 2026' -> 'Octubre de 2026' */
+.tabla-mes-a-mes .fila-mes th::first-letter {
+  text-transform: uppercase;
+}
+
+.tabla-mes-a-mes tbody tr:not(.fila-mes) th,
+.tabla-mes-a-mes tbody tr:not(.fila-mes) td {
+  font-size: 0.875rem;
+  color: var(--marfil-suave);
+}
+
+.tabla-mes-a-mes tbody tr:not(.fila-mes) th {
+  padding-left: 1rem;
+  font-weight: 500;
+}
+
+.tabla-mes-a-mes .fila-saldada td:last-child {
+  color: var(--verde-claro);
+  font-weight: 700;
+}
+
+.chip-saldada {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--verde-tinta);
+  background: var(--verde-500);
+  border-radius: 999px;
+}
+
+.cronograma-ver-todo {
+  margin-top: 1rem;
+}
+
+/* En celular las tablas se apilan: cada fila es un bloque y cada dato lleva
+ * su etiqueta (data-titulo) a la izquierda. Sin scroll horizontal. */
+@media (max-width: 600px) {
+  .tabla-cronograma thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .tabla-cronograma,
+  .tabla-cronograma tbody,
+  .tabla-cronograma tfoot,
+  .tabla-cronograma tr,
+  .tabla-cronograma th,
+  .tabla-cronograma td {
+    display: block;
+    width: 100%;
+  }
+
+  .tabla-cronograma tr {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .tabla-cronograma tbody th,
+  .tabla-cronograma tbody td,
+  .tabla-cronograma tfoot th,
+  .tabla-cronograma tfoot td {
+    padding: 0.15rem 0;
+    border: none;
+  }
+
+  .tabla-cronograma td[data-titulo] {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    text-align: right;
+  }
+
+  .tabla-cronograma td[data-titulo]::before {
+    content: attr(data-titulo);
+    font-weight: 500;
+    color: var(--marfil-tenue);
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .tabla-cronograma tfoot tr {
+    border-bottom: none;
+    border-top: 2px solid var(--borde-input);
+  }
+
+  .tabla-mes-a-mes .fila-mes {
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radio-sm);
+    background: var(--superficie);
+  }
+
+  .tabla-mes-a-mes .fila-mes th,
+  .tabla-mes-a-mes .fila-mes td {
+    padding: 0.15rem 0;
+    background: none;
+  }
+
+  .tabla-mes-a-mes tbody tr:not(.fila-mes) {
+    padding-left: 0.75rem;
+  }
+
+  .tabla-mes-a-mes tbody tr:not(.fila-mes) th {
+    padding-left: 0;
+  }
+}
+
 .plan-acciones {
   display: flex;
   flex-wrap: wrap;

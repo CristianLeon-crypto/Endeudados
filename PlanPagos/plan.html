@@ -94,6 +94,56 @@
                         <h2 class="plan-pagos-titulo">Tu plan de abonos de este mes</h2>
                         <ol id="lista-pagos" class="lista-pagos"></ol>
                     </div>
+                    <!-- EN-89: cronograma hasta quedar libre de deudas. Solo se
+                         muestra cuando hay fecha estimada. -->
+                    <section id="bloque-cronograma" class="tarjeta plan-cronograma hidden" aria-labelledby="cronograma-titulo">
+                        <div class="cronograma-encabezado">
+                            <h2 id="cronograma-titulo" class="plan-pagos-titulo">Tu camino hasta quedar en cero</h2>
+                            <div class="cronograma-vistas" role="group" aria-label="Cómo ver el cronograma">
+                                <button type="button" class="cronograma-vista" data-vista="resumido" aria-pressed="true">Resumido</button>
+                                <button type="button" class="cronograma-vista" data-vista="mes" aria-pressed="false">Mes a mes</button>
+                            </div>
+                        </div>
+                        <p id="cronograma-total" class="cronograma-total"></p>
+
+                        <div id="vista-resumido" class="cronograma-tabla">
+                            <table class="tabla-cronograma">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Deuda</th>
+                                        <th scope="col">Se termina de pagar</th>
+                                        <th scope="col" class="celda-monto">Total abonado</th>
+                                        <th scope="col" class="celda-monto">Intereses</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpo-resumido"></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th scope="row">Total</th>
+                                        <td id="resumido-total-mes" data-titulo="Quedas libre"></td>
+                                        <td id="resumido-total-pagado" class="celda-monto" data-titulo="Total abonado"></td>
+                                        <td id="resumido-total-intereses" class="celda-monto" data-titulo="Intereses"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div id="vista-mes" class="cronograma-tabla hidden">
+                            <!-- Un tbody por mes: la fila del mes con sus totales y
+                                 debajo una fila por deuda. plan.js los llena. -->
+                            <table id="tabla-mes-a-mes" class="tabla-cronograma tabla-mes-a-mes">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Mes y deuda</th>
+                                        <th scope="col" class="celda-monto">Abono</th>
+                                        <th scope="col" class="celda-monto">Intereses</th>
+                                        <th scope="col" class="celda-monto">Saldo al cierre</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <button type="button" id="cronograma-ver-todo" class="btn btn-secondary cronograma-ver-todo hidden"></button>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="plan-acciones">
