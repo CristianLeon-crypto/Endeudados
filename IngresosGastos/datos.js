@@ -224,8 +224,73 @@ async function agregarDeuda(datos) {
   };
 }
 
+async function actualizarDeuda(id, datos) {
+  const { data, error } = await sbClient
+    .from('deudas')
+    .update({
+      nombre: datos.nombre,
+      saldo: datos.saldo,
+      tasa_ea: datos.tasaEA,
+      pago_minimo: datos.pagoMinimo
+    })
+    .eq('id', id)
+    .select('id, nombre, saldo, tasa_ea, pago_minimo, fecha')
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    nombre: data.nombre,
+    saldo: Number(data.saldo),
+    tasaEA: Number(data.tasa_ea),
+    pagoMinimo: Number(data.pago_minimo),
+    fecha: data.fecha
+  };
+}
+
 async function eliminarDeuda(id) {
   const { error } = await sbClient.from('deudas').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ----
+// Abonos (pagos a deudas)
+//
+// El saldo de la deuda se actualiza solo: un trigger en la base resta el monto
+// al insertar y lo devuelve al borrar. Aca solo se guarda el movimiento.
+// ----
+
+async function obtenerAbonos(deudaId) {
+  let consulta = sbClient.from('abonos').select('id, deuda_id, monto, fecha');
+  if (deudaId) {
+    consulta = consulta.eq('deuda_id', deudaId);
+  }
+  const { data, error } = await consulta;
+  if (error) throw error;
+  return data.map(function (fila) {
+    return { id: fila.id, deudaId: fila.deuda_id, monto: Number(fila.monto), fecha: fila.fecha };
+  });
+}
+
+async function agregarAbono(datos) {
+  const usuario = await getUsuarioActual();
+  const { data, error } = await sbClient
+    .from('abonos')
+    .insert({
+      deuda_id: datos.deudaId,
+      usuario_id: usuario.id,
+      monto: datos.monto,
+      fecha: _fechaDeHoy()
+    })
+    .select('id, deuda_id, monto, fecha')
+    .single();
+  if (error) throw error;
+  return { id: data.id, deudaId: data.deuda_id, monto: Number(data.monto), fecha: data.fecha };
+}
+
+async function eliminarAbono(id) {
+  const { error } = await sbClient.from('abonos').delete().eq('id', id);
   if (error) throw error;
 }
 
