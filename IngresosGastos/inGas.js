@@ -23,7 +23,7 @@ const estado = {
   gastosHormiga: [],
   deudas: []
 };
-
+let deudaEditandoId = null;
 // Lo que cambia entre una entidad y otra. El resto del flujo (validar, guardar,
 // pintar, eliminar) es el mismo para las cuatro.
 //
@@ -91,6 +91,7 @@ const tipos = {
     camposMonto: ['saldo', 'pagoMinimo'],
     validar: function (entrada) { return validarDeuda(entrada); },
     agregar: agregarDeuda,
+    actualizar: actualizarDeuda,
     eliminar: eliminarDeuda,
     plantilla: 'plantilla-deuda',
     llenarFila: llenarFilaDeuda,
@@ -326,12 +327,33 @@ function limpiarErrorCampo(tipo, campo) {
   ocultar(porId(`error-${tipo}-${campo}`));
 }
 
+function cancelarEdicionDeuda() {
+  deudaEditandoId = null;
+
+  porId('form-deuda').reset();
+
+  tipos.deuda.campos.forEach(function (campo) {
+    limpiarErrorCampo('deuda', campo);
+  });
+
+  ocultar(porId('error-deuda-general'));
+  porId('titulo-form-deuda').textContent = 'Registrar deuda';
+  porId('texto-submit-deuda').textContent = 'Agregar deuda';
+  porId('btn-cancelar-edicion-deuda').classList.add('hidden');
+}
+
 function conectarFormulario(tipo) {
   const config = tipos[tipo];
   const form = porId(`form-${tipo}`);
   const boton = form.querySelector('button[type="submit"]');
   const errorGeneral = porId(`error-${tipo}-general`);
 
+  if (tipo === 'deuda') {
+    porId('btn-cancelar-edicion-deuda').addEventListener('click', function () {
+      cancelarEdicionDeuda();
+      porId('deuda-nombre').focus();
+    });
+  }
   // Al salir del campo el monto se muestra con puntos de miles: 1500000 -> 1.500.000
   config.camposMonto.forEach(function (campo) {
     const input = porId(`${tipo}-${campo}`);
@@ -380,12 +402,33 @@ function conectarFormulario(tipo) {
     boton.disabled = true;
 
     try {
-      const registro = await config.agregar(resultado.datos);
-      estado[config.coleccion].push(registro);
+      const editando = tipo === 'deuda' && deudaEditandoId !== null;
+
+      if (editando) {
+        const idEditado = deudaEditandoId;
+        const registroActualizado = await config.actualizar(idEditado, resultado.datos);
+
+        estado.deudas = estado.deudas.map(function (deuda) {
+          return String(deuda.id) === String(idEditado)
+            ? registroActualizado
+            : deuda;
+        });
+
+        cancelarEdicionDeuda();
+      } else {
+        const registro = await config.agregar(resultado.datos);
+        estado[config.coleccion].push(registro);
+        form.reset();
+      }
+
       renderizar();
-      form.reset();
       porId(`${tipo}-${config.campos[0]}`).focus();
-      anunciar(`${config.textoAgregado} ${config.total(estado[config.coleccion])}.`);
+
+      if (editando) {
+        anunciar(`Deuda actualizada. Saldo total: ${config.total(estado.deudas)}.`);
+      } else {
+        anunciar(`${config.textoAgregado} ${config.total(estado[config.coleccion])}.`);
+      }
     } catch (error) {
       mostrar(errorGeneral, 'No se pudo guardar el registro. Intenta nuevamente.');
       console.error(error);
@@ -407,6 +450,40 @@ function conectarLista(tipo) {
   // Un solo listener para toda la lista, porque las filas se vuelven a crear
   // cada vez que se pinta.
   contenedor.addEventListener('click', async function (event) {
+    if (tipo === 'deuda') {
+      const botonEditar = event.target.closest('.btn-editar-deuda');
+
+      if (botonEditar) {
+        const fila = botonEditar.closest('.registro');
+        const id = fila.dataset.id;
+        const deuda = estado.deudas.find(function (registro) {
+          return String(registro.id) === String(id);
+        });
+
+        if (!deuda) {
+          return;
+        }
+
+        deudaEditandoId = deuda.id;
+
+        porId('deuda-nombre').value = deuda.nombre;
+        porId('deuda-saldo').value = formatearMiles(deuda.saldo);
+        porId('deuda-tasaEA').value = Number(deuda.tasaEA).toLocaleString('es-CO');
+        porId('deuda-pagoMinimo').value = formatearMiles(deuda.pagoMinimo);
+
+        tipos.deuda.campos.forEach(function (campo) {
+          limpiarErrorCampo('deuda', campo);
+        });
+
+        ocultar(porId('error-deuda-general'));
+        porId('titulo-form-deuda').textContent = 'Editar deuda';
+        porId('texto-submit-deuda').textContent = 'Guardar cambios';
+        porId('btn-cancelar-edicion-deuda').classList.remove('hidden');
+        porId('deuda-nombre').focus();
+
+        return;
+      }
+    }
     const boton = event.target.closest('.btn-eliminar');
     if (!boton) {
       return;

@@ -224,6 +224,31 @@ async function agregarDeuda(datos) {
   };
 }
 
+async function actualizarDeuda(id, datos) {
+  const { data, error } = await sbClient
+    .from('deudas')
+    .update({
+      nombre: datos.nombre,
+      saldo: datos.saldo,
+      tasa_ea: datos.tasaEA,
+      pago_minimo: datos.pagoMinimo
+    })
+    .eq('id', id)
+    .select('id, nombre, saldo, tasa_ea, pago_minimo, fecha')
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    nombre: data.nombre,
+    saldo: Number(data.saldo),
+    tasaEA: Number(data.tasa_ea),
+    pagoMinimo: Number(data.pago_minimo),
+    fecha: data.fecha
+  };
+}
+
 async function eliminarDeuda(id) {
   const { error } = await sbClient.from('deudas').delete().eq('id', id);
   if (error) throw error;

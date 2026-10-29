@@ -7,7 +7,7 @@
 
 // Tope de seguridad para un monto: 1 billon de pesos. Evita que un error de
 // tipeo (ceros de mas) dispare los totales.
-const MONTO_MAXIMO = 1000000000000;
+const MONTO_MAXIMO = 1000000000;
 const LARGO_MAXIMO_CONCEPTO = 60;
 
 const formatoPesos = new Intl.NumberFormat('es-CO', {
@@ -474,4 +474,45 @@ function periodoDeFecha(fecha) {
 function nombreDelPeriodo(periodo) {
   const [anio, mes] = periodo.split('-').map(Number);
   return new Date(anio, mes - 1, 1).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+}
+
+function simularPagoDeuda(saldoInicial, tasaEA, pagoMinimo, abonoExtra = 0) {
+  if (
+    !Number.isFinite(saldoInicial) ||
+    !Number.isFinite(tasaEA) ||
+    !Number.isFinite(pagoMinimo) ||
+    !Number.isFinite(abonoExtra) ||
+    saldoInicial <= 0 ||
+    tasaEA <= 0 ||
+    pagoMinimo < 0 ||
+    abonoExtra < 0
+  ) {
+    return { estado: 'datos-invalidos' };
+  }
+
+  const tasaMensual = tasaMensualEquivalente(tasaEA);
+  const pago = pagoMinimo + abonoExtra;
+
+  if (pago <= saldoInicial * tasaMensual) {
+    return { estado: 'no-amortiza' };
+  }
+
+  let saldo = saldoInicial;
+  let meses = 0;
+  let interesesTotales = 0;
+  const maximoMeses = 600;
+
+  while (saldo > 0 && meses < maximoMeses) {
+    const interes = saldo * tasaMensual;
+    interesesTotales += interes;
+    saldo += interes;
+    saldo -= Math.min(pago, saldo);
+    meses++;
+  }
+
+  if (saldo > 0) {
+    return { estado: 'limite' };
+  }
+
+  return { estado: 'pagada', meses, interesesTotales };
 }
