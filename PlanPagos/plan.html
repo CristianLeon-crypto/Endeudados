@@ -96,25 +96,68 @@
                         <span id="mensaje-plan" aria-live="polite">Calculando tu plan…</span>
                     </p>
 
+                    <!-- EN-77: fecha estimada para quedar libre de deudas.
+                         plan.css usa data-alerta cuando no hay fecha posible. -->
+                    <article id="tarjeta-libre" class="tarjeta plan-libre hidden" data-alerta="no" aria-live="polite">
+                        <h2 id="libre-titulo" class="plan-libre-titulo"></h2>
+                        <p id="libre-detalle" class="plan-libre-detalle"></p>
+                        <p id="libre-supuesto" class="plan-libre-supuesto">Es una estimación: supone que tus ingresos y gastos esenciales se mantienen iguales cada mes, que sigues este plan y que no adquieres deudas nuevas.</p>
+                    </article>
+
                     <div id="bloque-pagos" class="tarjeta plan-pagos hidden">
                         <h2 class="plan-pagos-titulo">Tu plan de abonos de este mes</h2>
                         <ol id="lista-pagos" class="lista-pagos"></ol>
                     </div>
+                    <!-- EN-89: cronograma hasta quedar libre de deudas. Solo se
+                         muestra cuando hay fecha estimada. -->
+                    <section id="bloque-cronograma" class="tarjeta plan-cronograma hidden" aria-labelledby="cronograma-titulo">
+                        <div class="cronograma-encabezado">
+                            <h2 id="cronograma-titulo" class="plan-pagos-titulo">Tu camino hasta quedar en cero</h2>
+                            <div class="cronograma-vistas" role="group" aria-label="Cómo ver el cronograma">
+                                <button type="button" class="cronograma-vista" data-vista="resumido" aria-pressed="true">Resumido</button>
+                                <button type="button" class="cronograma-vista" data-vista="mes" aria-pressed="false">Mes a mes</button>
+                            </div>
+                        </div>
+                        <p id="cronograma-total" class="cronograma-total"></p>
 
-                    <!-- Proyeccion: cuanto falta para terminar de pagar, con un
-         abono extra topado para dejar margen de ocio -->
-                    <div id="bloque-proyeccion" class="tarjeta plan-proyeccion hidden">
-                        <h2 class="proyeccion-titulo">¿Cuánto falta para terminar de pagar?</h2>
+                        <div id="vista-resumido" class="cronograma-tabla">
+                            <table class="tabla-cronograma">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Deuda</th>
+                                        <th scope="col">Se termina de pagar</th>
+                                        <th scope="col" class="celda-monto">Total abonado</th>
+                                        <th scope="col" class="celda-monto">Intereses</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cuerpo-resumido"></tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th scope="row">Total</th>
+                                        <td id="resumido-total-mes" data-titulo="Quedas libre"></td>
+                                        <td id="resumido-total-pagado" class="celda-monto" data-titulo="Total abonado"></td>
+                                        <td id="resumido-total-intereses" class="celda-monto" data-titulo="Intereses"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
 
-                        <p id="proyeccion-tiempo" class="proyeccion-tiempo">—</p>
-
-                        <label for="abono-extra" class="proyeccion-etiqueta">
-                            Abono extra al mes: <strong id="abono-valor">$ 0</strong>
-                        </label>
-                        <input id="abono-extra" type="range" min="0" max="0" step="10000" value="0"
-                            aria-describedby="abono-nota">
-                        <p id="abono-nota" class="proyeccion-nota"></p>
-                    </div>
+                        <div id="vista-mes" class="cronograma-tabla hidden">
+                            <!-- Un tbody por mes: la fila del mes con sus totales y
+                                 debajo una fila por deuda. plan.js los llena. -->
+                            <table id="tabla-mes-a-mes" class="tabla-cronograma tabla-mes-a-mes">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Mes y deuda</th>
+                                        <th scope="col" class="celda-monto">Abono</th>
+                                        <th scope="col" class="celda-monto">Intereses</th>
+                                        <th scope="col" class="celda-monto">Saldo al cierre</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <button type="button" id="cronograma-ver-todo" class="btn btn-secondary cronograma-ver-todo hidden"></button>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="plan-acciones">

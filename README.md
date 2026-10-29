@@ -20,3 +20,11 @@ La aplicación utiliza una arquitectura modular por pantallas, en la que cada fu
 Brindar una herramienta sencilla y accesible que ayude a los usuarios a visualizar su situación financiera, reconocer patrones de gasto y tomar decisiones más organizadas para mejorar su salud financiera.
 
 > Endeudados se encuentra en desarrollo y sus funcionalidades se irán ampliando progresivamente.
+
+## Pruebas
+
+La lógica de cálculo (`IngresosGastos/calculos.js`) tiene pruebas en `pruebas/`. Usan el runner que ya trae Node 18 o superior, así que no hay nada que instalar:
+
+```
+node --test
+```
