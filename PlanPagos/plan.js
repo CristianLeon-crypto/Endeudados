@@ -123,6 +123,7 @@ function renderizar() {
   renderizarResumen(plan, hayDeficit);
   porId('mensaje-plan').textContent = MENSAJES_PLAN[estadoPlan](plan);
   renderizarPagos(estadoPlan === 'plan' ? plan.pagos : [], plan);
+  renderizarProyeccion(plan, estado.cargado);
 }
 
 function renderizarResumen(plan, hayDeficit) {
@@ -180,6 +181,58 @@ function crearFilaPago(item, plan) {
 
   return fila;
 }
+
+// ----
+// Proyeccion: cuanto falta para terminar + abono extra topado
+// ----
+
+// La barra recuerda donde la dejo el usuario entre renders (el tope la limita)
+let abonoExtra = 0;
+
+function renderizarProyeccion(plan, cargado) {
+  const bloque = porId('bloque-proyeccion');
+  const barra = porId('abono-extra');
+  const nota = porId('abono-nota');
+
+  if (!cargado) {
+    bloque.classList.add('hidden');
+    return;
+  }
+
+  bloque.classList.remove('hidden');
+
+  // Paz mental: la barra nunca pasa del tope y se bloquea si no hay margen
+  const tope = topeAbonoExtra(plan.excedente);
+  barra.max = tope;
+  barra.disabled = plan.estado !== 'plan' || tope === 0;
+  if (abonoExtra > tope) {
+    abonoExtra = tope;
+  }
+  barra.value = abonoExtra;
+
+  if (plan.estado === 'insuficiente') {
+    nota.textContent = 'Tus pagos mínimos superan tu capacidad: por ahora no se puede aumentar el abono.';
+  } else if (plan.estado === 'sin-deudas') {
+    nota.textContent = 'Cuando registres deudas, aquí podrás simular un abono extra.';
+  } else if (tope === 0) {
+    nota.textContent = 'Tu excedente está muy justo: por paz mental, mejor no aumentar el abono.';
+  } else {
+    nota.textContent = `Puedes subir hasta ${formatearPesos(tope)}: se dejan ${formatearPesos(plan.excedente - tope)} libres para ocio e imprevistos.`;
+  }
+
+  porId('abono-valor').textContent = `${formatearPesos(abonoExtra)}/mes`;
+
+  const proyeccion = proyectarSalidaDeuda(estado.deudas, abonoExtra);
+  porId('proyeccion-tiempo').textContent = textoProyeccion(proyeccion);
+}
+
+// Mover la barra solo recalcula la proyeccion, no repite todo el render
+porId('abono-extra').addEventListener('input', function () {
+  abonoExtra = Number(porId('abono-extra').value);
+  porId('abono-valor').textContent = `${formatearPesos(abonoExtra)}/mes`;
+  const proyeccion = proyectarSalidaDeuda(estado.deudas, abonoExtra);
+  porId('proyeccion-tiempo').textContent = textoProyeccion(proyeccion);
+});
 
 function mostrarUsuario(usuario) {
   porId('usuario-nombre').textContent = usuario.nombre;

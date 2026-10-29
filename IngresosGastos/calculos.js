@@ -516,3 +516,112 @@ function simularPagoDeuda(saldoInicial, tasaEA, pagoMinimo, abonoExtra = 0) {
 
   return { estado: 'pagada', meses, interesesTotales };
 }
+
+// ---------------------------------------------------------------------------
+// Proyeccion: cuanto falta para terminar de pagar (con interes)
+// ---------------------------------------------------------------------------
+
+// Tope de meses simulados (50 anos): evita colgar la pantalla cuando el pago
+// apenas cubre los intereses.
+const MESES_MAXIMOS_PROYECCION = 600;
+
+// Del excedente del mes solo se puede comprometer en abonos extra una parte.
+// El resto queda libre para ocio, imprevistos y paz mental.
+const PORCENTAJE_ABONABLE = 0.7;
+const PASO_ABONO_EXTRA = 10000;
+
+// Tope del abono extra: 70% del excedente, redondeado a la baja en pasos de
+// 10.000. Si el excedente es muy justo devuelve 0: no se puede aumentar.
+function topeAbonoExtra(excedente) {
+  if (excedente <= 0) {
+    return 0;
+  }
+  return Math.floor((excedente * PORCENTAJE_ABONABLE) / PASO_ABONO_EXTRA) * PASO_ABONO_EXTRA;
+}
+
+// Cuantos meses faltan para pagar TODAS las deudas si cada mes se pagan los
+// minimos mas un abono extra, con interes compuesto y avalancha.
+// deudas: [{ nombre, saldo, tasaEA, pagoMinimo }], igual que la capa de datos.
+// Devuelve { estado, meses, interesesTotales }:
+//   'sin-deudas'  no hay deudas que pagar
+//   'no_amortiza' lo que se paga no cubre los intereses: la deuda crece
+//   'limite'      con ese pago no se termina en 50 anos
+//   'ok'          meses: cuanto falta; interesesTotales: interes pagado en total
+function proyectarSalidaDeuda(deudas, abonoExtra) {
+  if (!deudas.length) {
+    return { estado: 'sin-deudas' };
+  }
+
+  const tasas = deudas.map(function (deuda) {
+    return tasaMensualEquivalente(deuda.tasaEA);
+  });
+  const saldos = deudas.map(function (deuda) { return deuda.saldo; });
+  const presupuesto = deudas.reduce(function (total, deuda) {
+    return total + Math.min(deuda.pagoMinimo, deuda.saldo);
+  }, 0) + abonoExtra;
+
+  const interesesPrimerMes = deudas.reduce(function (total, _, i) {
+    return total + saldos[i] * tasas[i];
+  }, 0);
+  if (presupuesto <= interesesPrimerMes) {
+    return { estado: 'no_amortiza' };
+  }
+
+  // Avalancha: la plata va primero a la deuda de mayor tasa
+  const orden = deudas.map(function (_, i) { return i; }).sort(function (a, b) {
+    return tasas[b] - tasas[a];
+  });
+
+  let meses = 0;
+  let interesesTotales = 0;
+
+  while (meses < MESES_MAXIMOS_PROYECCION && saldos.some(function (saldo) { return saldo > 0.5; })) {
+    meses++;
+    deudas.forEach(function (_, i) {
+      const interes = saldos[i] * tasas[i];
+      interesesTotales += interes;
+      saldos[i] += interes;
+    });
+
+    let bolsa = presupuesto;
+    orden.forEach(function (i) {
+      const pago = Math.min(bolsa, saldos[i]);
+      saldos[i] -= pago;
+      bolsa -= pago;
+    });
+  }
+
+  if (saldos.some(function (saldo) { return saldo > 0.5; })) {
+    return { estado: 'limite' };
+  }
+
+  return { estado: 'ok', meses, interesesTotales: Math.round(interesesTotales) };
+}
+
+// 'ok' con 14 meses desde noviembre de 2026 -> 'enero de 2028'
+function fechaQuedaLibre(meses) {
+  const fecha = new Date();
+  fecha.setMonth(fecha.getMonth() + meses);
+  return fecha.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+}
+
+// Texto del tiempo restante, igual en las dos pantallas que lo muestran
+function textoProyeccion(proyeccion) {
+  if (proyeccion.estado === 'sin-deudas') {
+    return 'No tienes deudas registradas: ya estás libre.';
+  }
+  if (proyeccion.estado === 'no_amortiza') {
+    return 'Con este abono la deuda nunca se termina: lo que pagas no cubre los intereses.';
+  }
+  if (proyeccion.estado === 'limite') {
+    return 'Con este abono no se termina ni en 50 años. Sube el abono extra.';
+  }
+
+  const anios = Math.floor(proyeccion.meses / 12);
+  const resto = proyeccion.meses % 12;
+  const duracion = anios > 0
+    ? `${anios} ${anios === 1 ? 'año' : 'años'}${resto ? ` y ${resto} ${resto === 1 ? 'mes' : 'meses'}` : ''}`
+    : `${proyeccion.meses} ${proyeccion.meses === 1 ? 'mes' : 'meses'}`;
+  return `${duracion}, quedando libre en ${fechaQuedaLibre(proyeccion.meses)}.`;
+}
+

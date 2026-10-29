@@ -7,7 +7,8 @@
     <title>Endeudados - Análisis financiero</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="../shared/base.css">
     <link rel="stylesheet" href="../IngresosGastos/inGas.css">
     <link rel="stylesheet" href="deudas.css">
@@ -20,11 +21,12 @@
             <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
                 <defs>
                     <linearGradient id="logo-degradado" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stop-color="#1C1C1C" />
-                    <stop offset="1" stop-color="#28B660" />
+                        <stop offset="0" stop-color="#1C1C1C" />
+                        <stop offset="1" stop-color="#28B660" />
                     </linearGradient>
                 </defs>
-                <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#logo-degradado)" stroke="#F3ECDE" stroke-opacity="0.18" />
+                <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#logo-degradado)" stroke="#F3ECDE"
+                    stroke-opacity="0.18" />
                 <rect x="9" y="11" width="22" height="4" rx="2" fill="#F3ECDE" />
                 <rect x="9" y="18" width="15" height="4" rx="2" fill="#F3ECDE" />
                 <rect x="9" y="25" width="8" height="4" rx="2" fill="#A9501C" />
@@ -38,7 +40,10 @@
             <a href="../PlanPagos/plan.html">Plan de pagos</a>
         </nav>
         <p id="usuario-actual" class="chip-usuario hidden">
-            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" /></svg>
+            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" />
+                <path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" />
+            </svg>
             <span id="usuario-nombre"></span>
         </p>
     </header>
@@ -49,9 +54,12 @@
         <section id="resumen" class="seccion" aria-labelledby="titulo-resumen">
             <div class="contenedor">
                 <div class="encabezado-seccion izquierda">
-                    <span class="eyebrow"><span>Análisis financiero · <span id="periodo-nombre">este mes</span></span></span>
-                    <h1 id="titulo-resumen" class="titulo-seccion">Tu panorama, <span class="acento-serif">de un vistazo</span></h1>
-                    <p class="texto-seccion">Tres gráficos con la salud de tus finanzas: cómo se reparte tu ingreso, cuánto pesa cada deuda y qué proporción de lo que entra se va en gastos.</p>
+                    <span class="eyebrow"><span>Análisis financiero · <span id="periodo-nombre">este
+                                mes</span></span></span>
+                    <h1 id="titulo-resumen" class="titulo-seccion">Tu panorama, <span class="acento-serif">de un
+                            vistazo</span></h1>
+                    <p class="texto-seccion">Tres gráficos con la salud de tus finanzas: cómo se reparte tu ingreso,
+                        cuánto pesa cada deuda y qué proporción de lo que entra se va en gastos.</p>
                 </div>
 
                 <p id="error-carga" class="error-msg hidden" role="alert"></p>
@@ -78,7 +86,8 @@
                             </p>
                         </div>
                         <div class="grafico-contenedor">
-                            <canvas id="ef-grafico" role="img" aria-label="Gráfico de estado financiero del mes"></canvas>
+                            <canvas id="ef-grafico" role="img"
+                                aria-label="Gráfico de estado financiero del mes"></canvas>
                             <p id="ef-grafico-vacio" class="grafico-vacio hidden">Sin datos este mes.</p>
                         </div>
                         <p id="ef-mensaje" class="grafico-mensaje"></p>
@@ -130,17 +139,35 @@
                             </p>
                         </div>
                         <div class="grafico-contenedor">
-                            <canvas id="rt-grafico" role="img" aria-label="Gráfico de ratios de ingreso y gasto"></canvas>
+                            <canvas id="rt-grafico" role="img"
+                                aria-label="Gráfico de ratios de ingreso y gasto"></canvas>
                             <p id="rt-grafico-vacio" class="grafico-vacio hidden">Sin datos este mes.</p>
                         </div>
                         <p id="rt-mensaje" class="grafico-mensaje"></p>
                     </article>
 
                 </div>
+                <!-- Proyeccion: cuanto falta para terminar de pagar, con un
+                     abono extra topado para dejar margen de ocio -->
+                <div id="bloque-proyeccion" class="tarjeta plan-proyeccion hidden">
+                    <h2 class="proyeccion-titulo">¿Cuánto falta para terminar de pagar?</h2>
+
+                    <p id="proyeccion-tiempo" class="proyeccion-tiempo">—</p>
+
+                    <label for="abono-extra" class="proyeccion-etiqueta">
+                        Abono extra al mes: <strong id="abono-valor">$ 0</strong>
+                    </label>
+                    <input id="abono-extra" type="range" min="0" max="0" step="10000" value="0"
+                        aria-describedby="abono-nota">
+                    <p id="abono-nota" class="proyeccion-nota"></p>
+                </div>
 
                 <div class="acciones-resumen">
                     <a href="../IngresosGastos/inGas.html#deudas" class="btn btn-primary">
-                        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
+                        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 5v14" />
+                            <path d="M5 12h14" />
+                        </svg>
                         Agregar deuda
                     </a>
                     <a href="../PlanPagos/plan.html" class="btn btn-secondary">Ver plan de pagos</a>
@@ -154,64 +181,74 @@
                 <div class="encabezado-dividido">
                     <span class="eyebrow">Abonos</span>
                     <div>
-                    <h2 id="titulo-abonos" class="titulo-seccion">Registra tus <span class="acento-serif">pagos</span></h2>
-                    <p class="texto-seccion">Cada abono baja el saldo de la deuda automáticamente. Si lo eliminas, el saldo vuelve a subir.</p>
+                        <h2 id="titulo-abonos" class="titulo-seccion">Registra tus <span
+                                class="acento-serif">pagos</span></h2>
+                        <p class="texto-seccion">Cada abono baja el saldo de la deuda automáticamente. Si lo eliminas,
+                            el saldo vuelve a subir.</p>
                     </div>
                 </div>
 
                 <div class="registro-grid">
                     <form id="form-abono" class="tarjeta formulario-registro" novalidate>
-                    <h3 class="formulario-titulo">Registrar abono</h3>
+                        <h3 class="formulario-titulo">Registrar abono</h3>
 
-                    <div class="form-group">
-                    <label for="abono-deudaId">Deuda</label>
-                    <select id="abono-deudaId" required aria-describedby="error-abono-deudaId">
-                    <option value="" selected disabled>Selecciona una deuda</option>
-                    </select>
-                    <p id="error-abono-deudaId" class="error-campo hidden"></p>
-                    </div>
+                        <div class="form-group">
+                            <label for="abono-deudaId">Deuda</label>
+                            <select id="abono-deudaId" required aria-describedby="error-abono-deudaId">
+                                <option value="" selected disabled>Selecciona una deuda</option>
+                            </select>
+                            <p id="error-abono-deudaId" class="error-campo hidden"></p>
+                        </div>
 
-                    <div class="form-group">
-                    <label for="abono-monto">Monto (COP)</label>
-                    <div class="campo-monto">
-                    <span aria-hidden="true">$</span>
-                    <input type="text" id="abono-monto" placeholder="200.000" inputmode="numeric" autocomplete="off" required aria-describedby="error-abono-monto">
-                    </div>
-                    <p id="error-abono-monto" class="error-campo hidden"></p>
-                    </div>
+                        <div class="form-group">
+                            <label for="abono-monto">Monto (COP)</label>
+                            <div class="campo-monto">
+                                <span aria-hidden="true">$</span>
+                                <input type="text" id="abono-monto" placeholder="200.000" inputmode="numeric"
+                                    autocomplete="off" required aria-describedby="error-abono-monto">
+                            </div>
+                            <p id="error-abono-monto" class="error-campo hidden"></p>
+                        </div>
 
-                    <button type="submit" class="btn btn-primary btn-full">
-                    <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
-                    Agregar abono
-                    </button>
-                    <p id="error-abono-general" class="error-msg hidden" role="alert"></p>
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 5v14" />
+                                <path d="M5 12h14" />
+                            </svg>
+                            Agregar abono
+                        </button>
+                        <p id="error-abono-general" class="error-msg hidden" role="alert"></p>
                     </form>
 
                     <div class="tarjeta lista-card">
-                    <div class="lista-encabezado">
-                    <h3 id="titulo-lista-abonos" class="formulario-titulo" tabindex="-1">Abonos registrados</h3>
-                    <p class="lista-total">Total <strong id="total-lista-abonos">$ 0</strong></p>
-                    </div>
+                        <div class="lista-encabezado">
+                            <h3 id="titulo-lista-abonos" class="formulario-titulo" tabindex="-1">Abonos registrados</h3>
+                            <p class="lista-total">Total <strong id="total-lista-abonos">$ 0</strong></p>
+                        </div>
 
-                    <div class="tabla-scroll">
-                    <table id="tabla-abonos" class="tabla-datos hidden">
-                    <thead>
-                    <tr>
-                    <th scope="col">Deuda</th>
-                    <th scope="col" class="celda-monto">Monto</th>
-                    <th scope="col"><span class="sr-only">Acciones</span></th>
-                    </tr>
-                    </thead>
-                    <tbody id="lista-abonos"></tbody>
-                    </table>
-                    </div>
+                        <div class="tabla-scroll">
+                            <table id="tabla-abonos" class="tabla-datos hidden">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Deuda</th>
+                                        <th scope="col" class="celda-monto">Monto</th>
+                                        <th scope="col"><span class="sr-only">Acciones</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="lista-abonos"></tbody>
+                            </table>
+                        </div>
 
-                    <p id="vacio-abonos" class="lista-vacia">Aún no registras abonos.</p>
-                    <p id="error-lista-abonos" class="error-msg hidden" role="alert"></p>
-                    <p class="lista-nota">
-                    <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
-                    <span id="nota-abonos">Registra un abono para empezar a bajar tus deudas.</span>
-                    </p>
+                        <p id="vacio-abonos" class="lista-vacia">Aún no registras abonos.</p>
+                        <p id="error-lista-abonos" class="error-msg hidden" role="alert"></p>
+                        <p class="lista-nota">
+                            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                                <circle cx="12" cy="12" r="9" />
+                                <path d="M12 16v-4" />
+                                <path d="M12 8h.01" />
+                            </svg>
+                            <span id="nota-abonos">Registra un abono para empezar a bajar tus deudas.</span>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -229,7 +266,13 @@
             <td data-titulo="Monto" class="celda-monto registro-monto"></td>
             <td class="celda-accion">
                 <button type="button" class="btn-eliminar">
-                    <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="m6 7 1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" /><path d="M9 7V4h6v3" /></svg>
+                    <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 7h16" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                        <path d="m6 7 1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" />
+                        <path d="M9 7V4h6v3" />
+                    </svg>
                 </button>
             </td>
         </tr>

@@ -142,6 +142,58 @@ function renderizar() {
   renderizarEstadoFinanciero();
   renderizarDistribucionDeudas();
   renderizarRatios();
+  // ----
+  // Proyeccion: cuanto falta para terminar + abono extra topado
+  // ----
+
+  let abonoExtra = 0;
+
+  function renderizarProyeccion() {
+    const bloque = porId('bloque-proyeccion');
+    const barra = porId('abono-extra');
+    const nota = porId('abono-nota');
+
+    // Antes de la sesion y los datos no se muestra nada
+    if (!estado.usuario) {
+      bloque.classList.add('hidden');
+      return;
+    }
+
+    // El excedente se calcula igual que en Plan de pagos
+    const plan = calcularPlanPagos(estado.ingresos, estado.gastos, estado.deudas);
+    bloque.classList.remove('hidden');
+
+    const tope = topeAbonoExtra(plan.excedente);
+    barra.max = tope;
+    barra.disabled = plan.estado !== 'plan' || tope === 0;
+    if (abonoExtra > tope) {
+      abonoExtra = tope;
+    }
+    barra.value = abonoExtra;
+
+    if (plan.estado === 'insuficiente') {
+      nota.textContent = 'Tus pagos mínimos superan tu capacidad: por ahora no se puede aumentar el abono.';
+    } else if (plan.estado === 'sin-deudas') {
+      nota.textContent = 'Cuando registres deudas, aquí podrás simular un abono extra.';
+    } else if (tope === 0) {
+      nota.textContent = 'Tu excedente está muy justo: por paz mental, mejor no aumentar el abono.';
+    } else {
+      nota.textContent = `Puedes subir hasta ${formatearPesos(tope)}: se dejan ${formatearPesos(plan.excedente - tope)} libres para ocio e imprevistos.`;
+    }
+
+    porId('abono-valor').textContent = `${formatearPesos(abonoExtra)}/mes`;
+
+    const proyeccion = proyectarSalidaDeuda(estado.deudas, abonoExtra);
+    porId('proyeccion-tiempo').textContent = textoProyeccion(proyeccion);
+  }
+
+  porId('abono-extra').addEventListener('input', function () {
+    abonoExtra = Number(porId('abono-extra').value);
+    porId('abono-valor').textContent = `${formatearPesos(abonoExtra)}/mes`;
+    const proyeccion = proyectarSalidaDeuda(estado.deudas, abonoExtra);
+    porId('proyeccion-tiempo').textContent = textoProyeccion(proyeccion);
+  });
+  renderizarProyeccion();
   renderizarAbonos();
 }
 

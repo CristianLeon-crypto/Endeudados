@@ -112,3 +112,41 @@
   gap: 0.75rem;
   margin-top: 2rem;
 }
+/* ---- Proyeccion: tiempo restante + abono extra topado ---- */
+
+.plan-proyeccion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.proyeccion-titulo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.proyeccion-tiempo {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.proyeccion-etiqueta {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--marfil-suave);
+}
+
+.proyeccion-nota {
+  font-size: 0.85rem;
+  color: var(--marfil-tenue);
+}
+
+#bloque-proyeccion input[type='range'] {
+  width: 100%;
+  accent-color: #28B660;
+}
