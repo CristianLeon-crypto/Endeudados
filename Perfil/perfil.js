@@ -20,6 +20,11 @@ const btnGuardar = document.getElementById('btn-guardar');
 const btnDescartar = document.getElementById('btn-descartar');
 const btnCerrarSesion = document.getElementById('btn-cerrar-sesion');
 
+const formEliminar = document.getElementById('form-eliminar');
+const inputConfirmar = document.getElementById('confirmar-eliminar');
+const btnEliminar = document.getElementById('btn-eliminar');
+const errorEliminar = document.getElementById('eliminar-error');
+
 const errorCarga = document.getElementById('error-carga');
 const errorGeneral = document.getElementById('perfil-error');
 const mensajeOk = document.getElementById('perfil-ok');
@@ -107,6 +112,7 @@ function habilitarFormulario() {
   inputNombre.disabled = false;
   inputCedula.disabled = false;
   // El correo queda deshabilitado a propósito: solo se muestra.
+  inputConfirmar.disabled = false;
 }
 
 // ---------------------------------------------------------------------------
@@ -268,6 +274,59 @@ btnDescartar.addEventListener('click', function () {
     ocultar(mensajeOk);
     actualizarBotones();
   });
+});
+
+// ---------------------------------------------------------------------------
+// Eliminar la cuenta (EN-44)
+// ---------------------------------------------------------------------------
+//
+// Todo el borrado lo hace la función eliminar_cuenta() de la base: borra al
+// usuario de la sesión en auth.users y, por cascade, su perfil, ingresos,
+// gastos, deudas y abonos. No recibe parámetros: no hay forma de pedirle que
+// borre a otro. El cliente solo la llama y sale.
+
+const PALABRA_CONFIRMACION = 'ELIMINAR';
+
+function confirmacionValida() {
+  return inputConfirmar.value.trim().toUpperCase() === PALABRA_CONFIRMACION;
+}
+
+inputConfirmar.addEventListener('input', function () {
+  ocultar(errorEliminar);
+  btnEliminar.disabled = !confirmacionValida();
+});
+
+formEliminar.addEventListener('submit', async function (event) {
+  event.preventDefault();
+
+  if (!confirmacionValida()) {
+    return;
+  }
+
+  btnEliminar.disabled = true;
+  inputConfirmar.disabled = true;
+  btnEliminar.textContent = 'Eliminando...';
+
+  try {
+    const { error } = await sbClient.rpc('eliminar_cuenta');
+
+    if (error) {
+      throw error;
+    }
+
+    // El usuario ya no existe en el servidor, así que solo se limpia la sesión
+    // guardada en este navegador. Un signOut normal intentaría avisarle al
+    // servidor por una sesión que ya no está.
+    await sbClient.auth.signOut({ scope: 'local' });
+    window.location.replace('../index.html');
+
+  } catch (error) {
+    mostrar(errorEliminar, 'No se pudo eliminar la cuenta. No se borró nada; intenta nuevamente.');
+    console.error(error);
+    btnEliminar.textContent = 'Eliminar mi cuenta para siempre';
+    inputConfirmar.disabled = false;
+    btnEliminar.disabled = !confirmacionValida();
+  }
 });
 
 // ---------------------------------------------------------------------------

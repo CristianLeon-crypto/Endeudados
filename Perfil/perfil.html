@@ -89,6 +89,21 @@
         </form>
       </section>
 
+      <section class="tarjeta zona-peligro" aria-labelledby="titulo-eliminar">
+        <h2 id="titulo-eliminar" class="zona-peligro-titulo">Eliminar mi cuenta</h2>
+        <p class="zona-peligro-texto">Se borran para siempre tu perfil, tus ingresos, gastos, gastos hormiga, deudas y abonos, y ya no vas a poder iniciar sesión con este correo. No se puede deshacer.</p>
+        <p class="ayuda-campo">Es tu derecho como titular de los datos (Ley 1581 de 2012, artículos 8 y 9).</p>
+
+        <form id="form-eliminar" novalidate>
+          <div class="form-group">
+            <label for="confirmar-eliminar">Para confirmar, escribe <strong>ELIMINAR</strong></label>
+            <input type="text" id="confirmar-eliminar" autocomplete="off" spellcheck="false" disabled>
+          </div>
+          <button type="submit" id="btn-eliminar" class="btn btn-peligro" disabled>Eliminar mi cuenta para siempre</button>
+          <p id="eliminar-error" class="error-msg hidden" role="alert"></p>
+        </form>
+      </section>
+
     </div>
   </main>
 
