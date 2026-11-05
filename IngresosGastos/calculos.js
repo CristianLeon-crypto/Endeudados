@@ -330,9 +330,23 @@ function calcularPlanPagos(ingresos, gastos, deudas) {
     return plan;
   }
 
-  // ordenadas viene en orden avalancha: la prioridad es la primera.
+  const reparto = repartirPagos(resumenDeudas.ordenadas, plan.excedente);
+  plan.pagos = reparto.pagos;
+  // Si alcanzo para saldar todas las deudas, esto es lo que queda libre.
+  plan.sobrante = reparto.sobrante;
+
+  return plan;
+}
+
+// Reparte un mes de pagos. Lo usan el plan del mes (EN-88) y la simulacion
+// hasta quedar libre de deudas (EN-77), para que la regla de la avalancha
+// viva en un solo lugar.
+//
+// ordenadas viene en orden avalancha: la prioridad es la primera. excedente
+// es lo que queda despues de reservar los minimos.
+function repartirPagos(ordenadas, excedente) {
   // Primero el minimo de cada deuda, topado a lo que se debe.
-  plan.pagos = resumenDeudas.ordenadas.map(function (deuda, indice) {
+  const pagos = ordenadas.map(function (deuda, indice) {
     const minimo = Math.min(deuda.pagoMinimo, deuda.saldo);
     return { deuda, esPrioridad: indice === 0, minimo, extra: 0, pago: minimo };
   });
@@ -342,8 +356,8 @@ function calcularPlanPagos(ingresos, gastos, deudas) {
   // el metodo avalancha. Antes el excedente completo iba a la primera deuda
   // aunque solo se debieran 200.000 de ella, y el plan sugeria abonar de mas
   // mientras la siguiente recibia solo su minimo (EN-101).
-  let porRepartir = plan.excedente;
-  plan.pagos.forEach(function (item) {
+  let porRepartir = excedente;
+  pagos.forEach(function (item) {
     if (porRepartir <= 0) {
       return;
     }
@@ -354,10 +368,173 @@ function calcularPlanPagos(ingresos, gastos, deudas) {
     porRepartir -= extra;
   });
 
-  // Si alcanzo para saldar todas las deudas, esto es lo que queda libre.
-  plan.sobrante = porRepartir;
+  return { pagos, sobrante: porRepartir };
+}
 
-  return plan;
+// ---------------------------------------------------------------------------
+// Cuando quedo libre de deudas (EN-77)
+//
+// Repite el plan del mes hasta que todos los saldos llegan a cero. Supone que
+// la capacidad de este mes se mantiene igual todos los meses: los mismos
+// ingresos y gastos esenciales, y ninguna deuda nueva. Cada mes:
+//   1. se reparte la capacidad con repartirPagos (minimos y avalancha)
+//   2. se resta lo pagado
+//   3. lo que queda debiendo genera el interes del mes
+// Al pagar antes de cobrar interes, el primer mes es exactamente el plan que
+// muestra la pantalla hoy.
+//
+// estado:
+//   'sin-deudas'    no hay deudas con saldo: no hay nada que simular
+//   'insuficiente'  la capacidad no cubre los minimos: no hay fecha posible
+//   'no-termina'    con estos pagos la deuda no se termina. motivo dice por que:
+//                     'intereses'  el interes del mes iguala o supera lo pagado
+//                     'plazo'      baja, pero tardaria mas de 50 anios
+//   'libre'         periodoLibre es el mes del ultimo pago
+// ---------------------------------------------------------------------------
+
+// Tope de la simulacion: 50 anios. Mas que eso no es un plan, y evita que un
+// pago apenas mayor que el interes deje el ciclo corriendo por siglos.
+const MESES_MAXIMOS_SIMULACION = 600;
+
+function sumarSaldos(deudas) {
+  return deudas.reduce(function (total, deuda) { return total + deuda.saldo; }, 0);
+}
+
+function simularLibreDeDeudas(ingresos, gastos, deudas, periodoInicial) {
+  // Una deuda en cero (por ejemplo, saldada con abonos) ya no cuenta
+  const conSaldo = deudas.filter(function (deuda) { return deuda.saldo > 0; });
+  const planDelMes = calcularPlanPagos(ingresos, gastos, conSaldo);
+
+  const resultado = {
+    estado: planDelMes.estado,
+    motivo: null,
+    capacidad: planDelMes.capacidad,
+    faltante: planDelMes.faltante,
+    meses: 0,
+    periodoLibre: null,
+    totalIntereses: 0,
+    totalPagado: 0,
+    // Un renglon por mes con lo pagado, el interes y el saldo de cada deuda.
+    // Lo va a mostrar el cronograma (EN-89).
+    cronograma: []
+  };
+
+  if (planDelMes.estado !== 'plan') {
+    return resultado;
+  }
+
+  // Copias: la simulacion baja los saldos mes a mes y no debe tocar las deudas
+  // que tiene la pantalla.
+  let vigentes = conSaldo.map(function (deuda) { return Object.assign({}, deuda); });
+  let saldoAnterior = sumarSaldos(vigentes);
+
+  while (vigentes.length > 0) {
+    if (resultado.meses === MESES_MAXIMOS_SIMULACION) {
+      resultado.estado = 'no-termina';
+      resultado.motivo = 'plazo';
+      return resultado;
+    }
+
+    // Los minimos solo bajan con el tiempo (cada uno esta topado a su saldo y
+    // las deudas saldadas salen), asi que si alcanzo el primer mes alcanza
+    // todos. Lo que antes era minimo de una deuda saldada pasa al excedente.
+    const ordenadas = ordenarPorAvalancha(vigentes);
+    const minimos = ordenadas.reduce(function (total, deuda) {
+      return total + Math.min(deuda.pagoMinimo, deuda.saldo);
+    }, 0);
+    const reparto = repartirPagos(ordenadas, resultado.capacidad - minimos);
+
+    let pagadoDelMes = 0;
+    let interesDelMes = 0;
+    const detalle = reparto.pagos.map(function (item) {
+      const restante = item.deuda.saldo - item.pago;
+      // Se redondea a pesos cada mes: sin eso quedan saldos de centavos que
+      // alargan la fecha un mes de mas.
+      const interes = Math.round(restante * tasaMensualEquivalente(item.deuda.tasaEA));
+      item.deuda.saldo = restante + interes;
+
+      pagadoDelMes += item.pago;
+      interesDelMes += interes;
+      return { id: item.deuda.id, nombre: item.deuda.nombre, pago: item.pago, interes, saldo: item.deuda.saldo };
+    });
+
+    resultado.meses += 1;
+    resultado.totalPagado += pagadoDelMes;
+    resultado.totalIntereses += interesDelMes;
+
+    vigentes = vigentes.filter(function (deuda) { return deuda.saldo > 0; });
+    const saldoTotal = sumarSaldos(vigentes);
+
+    resultado.cronograma.push({
+      periodo: sumarMesesAPeriodo(periodoInicial, resultado.meses - 1),
+      pagado: pagadoDelMes,
+      interes: interesDelMes,
+      saldo: saldoTotal,
+      deudas: detalle
+    });
+
+    // Si el saldo no bajo, el interes se come todo el pago: nunca va a bajar.
+    if (saldoTotal > 0 && saldoTotal >= saldoAnterior) {
+      resultado.estado = 'no-termina';
+      resultado.motivo = 'intereses';
+      return resultado;
+    }
+    saldoAnterior = saldoTotal;
+  }
+
+  resultado.estado = 'libre';
+  resultado.periodoLibre = resultado.cronograma[resultado.cronograma.length - 1].periodo;
+  return resultado;
+}
+
+// ---------------------------------------------------------------------------
+// Cronograma resumido (EN-89)
+//
+// Una fila por deuda a partir del cronograma de simularLibreDeDeudas(): en que
+// mes queda en cero, cuanto se le abona y cuantos intereses genera. Van en el
+// orden en que se saldan, que no siempre es el de la tasa: una deuda chica
+// puede saldarse con su minimo antes que la prioridad. Las que no alcanzan a
+// saldarse dentro de la simulacion van al final con periodoSaldada en null.
+// ---------------------------------------------------------------------------
+
+function resumirCronograma(simulacion) {
+  const porDeuda = new Map();
+
+  simulacion.cronograma.forEach(function (mes, indice) {
+    mes.deudas.forEach(function (fila) {
+      if (!porDeuda.has(fila.id)) {
+        porDeuda.set(fila.id, {
+          id: fila.id,
+          nombre: fila.nombre,
+          periodoSaldada: null,
+          meses: null,
+          totalPagado: 0,
+          totalIntereses: 0
+        });
+      }
+      const resumen = porDeuda.get(fila.id);
+      resumen.totalPagado += fila.pago;
+      resumen.totalIntereses += fila.interes;
+      if (fila.saldo === 0) {
+        resumen.periodoSaldada = mes.periodo;
+        resumen.meses = indice + 1;
+      }
+    });
+  });
+
+  // sort es estable: con el mismo mes queda el orden avalancha del primer mes
+  const deudas = Array.from(porDeuda.values()).sort(function (a, b) {
+    if (a.meses === null || b.meses === null) {
+      return (a.meses === null) - (b.meses === null);
+    }
+    return a.meses - b.meses;
+  });
+
+  return {
+    deudas,
+    totalPagado: simulacion.totalPagado,
+    totalIntereses: simulacion.totalIntereses
+  };
 }
 
 // ----
@@ -470,51 +647,16 @@ function periodoDeFecha(fecha) {
   return `${fecha.getFullYear()}-${mes}`;
 }
 
+// ('2026-11', 3) -> '2027-02'
+function sumarMesesAPeriodo(periodo, meses) {
+  const [anio, mes] = periodo.split('-').map(Number);
+  return periodoDeFecha(new Date(anio, mes - 1 + meses, 1));
+}
+
 // '2026-09' -> 'septiembre de 2026'
 function nombreDelPeriodo(periodo) {
   const [anio, mes] = periodo.split('-').map(Number);
   return new Date(anio, mes - 1, 1).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
-}
-
-function simularPagoDeuda(saldoInicial, tasaEA, pagoMinimo, abonoExtra = 0) {
-  if (
-    !Number.isFinite(saldoInicial) ||
-    !Number.isFinite(tasaEA) ||
-    !Number.isFinite(pagoMinimo) ||
-    !Number.isFinite(abonoExtra) ||
-    saldoInicial <= 0 ||
-    tasaEA <= 0 ||
-    pagoMinimo < 0 ||
-    abonoExtra < 0
-  ) {
-    return { estado: 'datos-invalidos' };
-  }
-
-  const tasaMensual = tasaMensualEquivalente(tasaEA);
-  const pago = pagoMinimo + abonoExtra;
-
-  if (pago <= saldoInicial * tasaMensual) {
-    return { estado: 'no-amortiza' };
-  }
-
-  let saldo = saldoInicial;
-  let meses = 0;
-  let interesesTotales = 0;
-  const maximoMeses = 600;
-
-  while (saldo > 0 && meses < maximoMeses) {
-    const interes = saldo * tasaMensual;
-    interesesTotales += interes;
-    saldo += interes;
-    saldo -= Math.min(pago, saldo);
-    meses++;
-  }
-
-  if (saldo > 0) {
-    return { estado: 'limite' };
-  }
-
-  return { estado: 'pagada', meses, interesesTotales };
 }
 
 // ---------------------------------------------------------------------------

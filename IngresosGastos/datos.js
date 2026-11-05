@@ -50,6 +50,15 @@ async function getUsuarioActual() {
   return _usuario;
 }
 
+// Cierra la sesion en Supabase y limpia el cache local (cerrar sesion).
+// Sin limpiar `_usuario` una nueva visita a la pantalla seguiria mostrando al
+// usuario anterior mientras dure la pagina cargada en memoria.
+async function cerrarSesion() {
+  const { error } = await sbClient.auth.signOut();
+  if (error) throw error;
+  _usuario = null;
+}
+
 // ----
 // Categorias de gasto esencial (fijas en codigo; no hay tabla)
 // ----
@@ -176,6 +185,53 @@ async function agregarGastoHormiga(datos) {
 async function eliminarGastoHormiga(id) {
   const { error } = await sbClient.from('gastos').delete().eq('id', id);
   if (error) throw error;
+}
+
+// ----
+// Editar ingresos y gastos
+//
+// Solo se tocan los campos que el usuario puede corregir. La fecha y el
+// usuario_id no cambian. Si RLS no deja actualizar, Supabase no da error: el
+// update simplemente no afecta ninguna fila y `data` llega vacio. Por eso se
+// comprueba, para no decirle "guardado" a alguien cuyo cambio no se hizo.
+// ----
+
+async function actualizarIngreso(id, datos) {
+  const { data, error } = await sbClient
+    .from('ingresos')
+    .update({ descripcion: datos.concepto, monto: datos.monto })
+    .eq('id', id)
+    .select('id, descripcion, monto, fecha')
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error('El update de ingresos no afecto ninguna fila (revisar politica RLS de update).');
+  return { id: data.id, concepto: data.descripcion, monto: Number(data.monto), fecha: data.fecha };
+}
+
+async function actualizarGasto(id, datos) {
+  const { data, error } = await sbClient
+    .from('gastos')
+    .update({ descripcion: datos.concepto, categoria: datos.categoria, monto: datos.monto })
+    .eq('id', id)
+    .eq('tipo', 'esencial')
+    .select('id, descripcion, categoria, monto, fecha')
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error('El update de gastos no afecto ninguna fila (revisar politica RLS de update).');
+  return { id: data.id, concepto: data.descripcion, categoria: data.categoria, monto: Number(data.monto), fecha: data.fecha };
+}
+
+async function actualizarGastoHormiga(id, datos) {
+  const { data, error } = await sbClient
+    .from('gastos')
+    .update({ descripcion: datos.concepto, monto: datos.montoMensual })
+    .eq('id', id)
+    .eq('tipo', 'hormiga')
+    .select('id, descripcion, monto, fecha')
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error('El update de gastos hormiga no afecto ninguna fila (revisar politica RLS de update).');
+  return { id: data.id, concepto: data.descripcion, montoMensual: Number(data.monto), fecha: data.fecha };
 }
 
 // ----

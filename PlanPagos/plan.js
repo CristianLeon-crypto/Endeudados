@@ -1,10 +1,12 @@
 // Pantalla de Plan de pagos (EN-88).
 //
 // Dice cuanto abonarle a cada deuda ESTE MES con lo que queda despues de los
-// gastos esenciales. Es un plan de un solo mes: no simula los siguientes.
+// gastos esenciales. Debajo, repitiendo ese plan cada mes, la fecha estimada
+// para quedar libre de deudas (EN-77) y el cronograma hasta llegar ahi (EN-89).
 //
 // Este archivo solo maneja la pantalla: carga con datos.js, calcula con
-// calcularPlanPagos() de calculos.js y pinta. Aca no se suma ni se reparte
+// calcularPlanPagos(), simularLibreDeDeudas() y resumirCronograma() de
+// calculos.js y pinta. Aca no se suma ni se reparte
 // ningun peso.
 
 const periodo = periodoDeFecha(new Date());
@@ -16,8 +18,14 @@ const estado = {
   usuario: null,
   ingresos: [],
   gastos: [],
-  deudas: []
+  deudas: [],
+  // Cronograma (EN-89): que vista se ve y si el mes a mes muestra todos los meses
+  vistaCronograma: 'resumido',
+  cronogramaCompleto: false
 };
+
+// El mes a mes puede tener cientos de meses: de entrada solo el primer anio
+const MESES_VISIBLES_CRONOGRAMA = 12;
 
 function porId(id) {
   return document.getElementById(id);
@@ -123,7 +131,234 @@ function renderizar() {
   renderizarResumen(plan, hayDeficit);
   porId('mensaje-plan').textContent = MENSAJES_PLAN[estadoPlan](plan);
   renderizarPagos(estadoPlan === 'plan' ? plan.pagos : [], plan);
-  renderizarProyeccion(plan, estado.cargado);
+
+  // Sin datos no se simula: la tarjeta y el cronograma quedan ocultos
+  const simulacion = estado.cargado
+    ? simularLibreDeDeudas(estado.ingresos, estado.gastos, estado.deudas, periodo)
+    : null;
+  renderizarLibre(simulacion);
+  renderizarCronograma(simulacion);
+}
+
+// Textos de la tarjeta "cuando quedo libre" (EN-77), uno por estado de
+// simularLibreDeDeudas(). Sin deudas la tarjeta no se muestra.
+const MENSAJES_LIBRE = {
+  libre: function (simulacion) {
+    if (simulacion.meses === 1) {
+      return {
+        titulo: 'Estimado: quedas libre de deudas este mes',
+        detalle: 'Con el plan de este mes saldas todas tus deudas, sin pagar más intereses.'
+      };
+    }
+    return {
+      titulo: `Estimado: quedas libre de deudas en ${nombreDelPeriodo(simulacion.periodoLibre)}`,
+      detalle: `En ${simulacion.meses} meses siguiendo este plan. En ese tiempo pagarías ${formatearPesos(simulacion.totalIntereses)} en intereses.`
+    };
+  },
+  'no-termina': function (simulacion) {
+    if (simulacion.motivo === 'plazo') {
+      return {
+        titulo: 'Con tus pagos actuales no terminas de pagar en los próximos 50 años',
+        detalle: 'Tu pago cubre los intereses, pero el saldo baja tan despacio que el plan no es realista. Abonar un poco más cada mes acorta mucho el plazo.'
+      };
+    }
+    const primerMes = simulacion.cronograma[0];
+    return {
+      titulo: 'Con tus pagos actuales, tu deuda no se termina',
+      detalle: `Este mes abonas ${formatearPesos(primerMes.pagado)}, pero lo que sigues debiendo genera ${formatearPesos(primerMes.interes)} de intereses: el saldo no baja.`
+    };
+  },
+  insuficiente: function () {
+    return {
+      titulo: 'No podemos estimar una fecha',
+      detalle: 'Tu capacidad de pago no cubre los pagos mínimos de tus deudas. Primero hay que cubrir los mínimos.'
+    };
+  }
+};
+
+function renderizarLibre(simulacion) {
+  const tarjeta = porId('tarjeta-libre');
+  if (!simulacion) {
+    tarjeta.classList.add('hidden');
+    return;
+  }
+
+  const mensajes = MENSAJES_LIBRE[simulacion.estado];
+  if (!mensajes) {
+    tarjeta.classList.add('hidden');
+    return;
+  }
+
+  const textos = mensajes(simulacion);
+  porId('libre-titulo').textContent = textos.titulo;
+  porId('libre-detalle').textContent = textos.detalle;
+  // La nota habla de "seguir este plan": sin plan (no cubre los minimos) no aplica
+  porId('libre-supuesto').classList.toggle('hidden', simulacion.estado === 'insuficiente');
+  tarjeta.dataset.alerta = simulacion.estado === 'libre' ? 'no' : 'si';
+  tarjeta.classList.remove('hidden');
+}
+
+// ---------------------------------------------------------------------------
+// Cronograma (EN-89)
+// ---------------------------------------------------------------------------
+
+// Solo con fecha estimada. Si el interes se come el pago, si no cubre los
+// minimos o si tardaria mas de 50 anios no hay camino que mostrar: la tarjeta
+// de EN-77 ya explica por que. Si todo se salda este mes tampoco: el plan de
+// arriba ya es todo el camino.
+function renderizarCronograma(simulacion) {
+  const bloque = porId('bloque-cronograma');
+  if (!simulacion || simulacion.estado !== 'libre' || simulacion.meses === 1) {
+    bloque.classList.add('hidden');
+    return;
+  }
+
+  const resumen = resumirCronograma(simulacion);
+  const capital = resumen.totalPagado - resumen.totalIntereses;
+  porId('cronograma-total').textContent = resumen.totalIntereses === 0
+    ? `En total abonas ${formatearPesos(resumen.totalPagado)}, sin pagar intereses.`
+    : `En total abonas ${formatearPesos(resumen.totalPagado)}: ${formatearPesos(capital)} a lo que debes hoy y ${formatearPesos(resumen.totalIntereses)} en intereses.`;
+
+  renderizarResumido(resumen, simulacion);
+  renderizarMesAMes(simulacion);
+
+  const esResumido = estado.vistaCronograma === 'resumido';
+  porId('vista-resumido').classList.toggle('hidden', !esResumido);
+  porId('vista-mes').classList.toggle('hidden', esResumido);
+  document.querySelectorAll('.cronograma-vista').forEach(function (boton) {
+    boton.setAttribute('aria-pressed', String(boton.dataset.vista === estado.vistaCronograma));
+  });
+
+  bloque.classList.remove('hidden');
+}
+
+// 'noviembre de 2026 · mes 3'
+function textoMesSaldada(periodoSaldada, meses) {
+  return `${nombreDelPeriodo(periodoSaldada)} · mes ${meses}`;
+}
+
+// Los nombres de las deudas los escribio el usuario: todo entra con
+// textContent, nunca con innerHTML. data-titulo es la etiqueta en celular.
+function crearCelda(etiqueta, texto, titulo, clase) {
+  const celda = document.createElement(etiqueta);
+  celda.textContent = texto;
+  if (titulo) {
+    celda.dataset.titulo = titulo;
+  }
+  if (clase) {
+    celda.className = clase;
+  }
+  return celda;
+}
+
+function renderizarResumido(resumen, simulacion) {
+  const cuerpo = porId('cuerpo-resumido');
+  cuerpo.replaceChildren.apply(cuerpo, resumen.deudas.map(function (deuda) {
+    const fila = document.createElement('tr');
+    const nombre = crearCelda('th', deuda.nombre, null, 'celda-deuda');
+    nombre.scope = 'row';
+    fila.append(
+      nombre,
+      crearCelda('td', textoMesSaldada(deuda.periodoSaldada, deuda.meses), 'Se termina de pagar'),
+      crearCelda('td', formatearPesos(deuda.totalPagado), 'Total abonado', 'celda-monto'),
+      crearCelda('td', formatearPesos(deuda.totalIntereses), 'Intereses', 'celda-monto celda-interes')
+    );
+    return fila;
+  }));
+
+  porId('resumido-total-mes').textContent = textoMesSaldada(simulacion.periodoLibre, simulacion.meses);
+  porId('resumido-total-pagado').textContent = formatearPesos(resumen.totalPagado);
+  porId('resumido-total-intereses').textContent = formatearPesos(resumen.totalIntereses);
+}
+
+function renderizarMesAMes(simulacion) {
+  const tabla = porId('tabla-mes-a-mes');
+  const total = simulacion.cronograma.length;
+  const visibles = estado.cronogramaCompleto ? total : Math.min(total, MESES_VISIBLES_CRONOGRAMA);
+
+  tabla.querySelectorAll('tbody').forEach(function (cuerpo) { cuerpo.remove(); });
+  simulacion.cronograma.slice(0, visibles).forEach(function (mes) {
+    tabla.append(crearCuerpoMes(mes));
+  });
+
+  const verTodo = porId('cronograma-ver-todo');
+  verTodo.classList.toggle('hidden', total <= MESES_VISIBLES_CRONOGRAMA);
+  verTodo.textContent = estado.cronogramaCompleto
+    ? `Ver solo los primeros ${MESES_VISIBLES_CRONOGRAMA} meses`
+    : `Ver los ${total} meses`;
+}
+
+// Un tbody por mes: la fila del mes con los totales y una fila por deuda. Solo
+// salen las deudas que siguen vigentes ese mes; la que llega a cero se marca.
+// Con una sola deuda sus cifras son las del mes: no se repite la fila, el
+// nombre va en la fila del mes.
+function crearCuerpoMes(mes) {
+  const cuerpo = document.createElement('tbody');
+  const unaSola = mes.deudas.length === 1;
+
+  const filaMes = document.createElement('tr');
+  filaMes.className = 'fila-mes';
+  const nombreMes = crearCelda('th', nombreDelPeriodo(mes.periodo));
+  nombreMes.scope = 'rowgroup';
+  if (unaSola) {
+    const deuda = mes.deudas[0];
+    const nombreDeuda = document.createElement('span');
+    nombreDeuda.className = 'fila-mes-deuda';
+    nombreDeuda.textContent = deuda.nombre;
+    nombreMes.append(nombreDeuda);
+    marcarSiSaldada(filaMes, nombreDeuda, deuda);
+  }
+  filaMes.append(
+    nombreMes,
+    crearCelda('td', formatearPesos(mes.pagado), 'Abono', 'celda-monto'),
+    crearCelda('td', formatearPesos(mes.interes), 'Intereses', 'celda-monto celda-interes'),
+    crearCelda('td', formatearPesos(mes.saldo), 'Saldo al cierre', 'celda-monto')
+  );
+  cuerpo.append(filaMes);
+  if (unaSola) {
+    return cuerpo;
+  }
+
+  mes.deudas.forEach(function (deuda) {
+    const fila = document.createElement('tr');
+    const nombre = crearCelda('th', deuda.nombre, null, 'celda-deuda');
+    nombre.scope = 'row';
+    marcarSiSaldada(fila, nombre, deuda);
+    fila.append(
+      nombre,
+      crearCelda('td', formatearPesos(deuda.pago), 'Abono', 'celda-monto'),
+      crearCelda('td', formatearPesos(deuda.interes), 'Intereses', 'celda-monto celda-interes'),
+      crearCelda('td', formatearPesos(deuda.saldo), 'Saldo al cierre', 'celda-monto')
+    );
+    cuerpo.append(fila);
+  });
+
+  return cuerpo;
+}
+
+// La deuda que llega a cero ese mes lleva la marca "Saldada" junto al nombre
+function marcarSiSaldada(fila, nombre, deuda) {
+  if (deuda.saldo !== 0) {
+    return;
+  }
+  fila.classList.add('fila-saldada');
+  const chip = document.createElement('span');
+  chip.className = 'chip-saldada';
+  chip.textContent = 'Saldada';
+  nombre.append(' ', chip);
+}
+
+function conectarCronograma() {
+  document.querySelectorAll('.cronograma-vista').forEach(function (boton) {
+    boton.addEventListener('click', function () {
+      estado.vistaCronograma = boton.dataset.vista;
+      renderizar();
+    });
+  });
+  porId('cronograma-ver-todo').addEventListener('click', function () {
+    estado.cronogramaCompleto = !estado.cronogramaCompleto;
+    renderizar();
+  });
 }
 
 function renderizarResumen(plan, hayDeficit) {
@@ -182,58 +417,6 @@ function crearFilaPago(item, plan) {
   return fila;
 }
 
-// ----
-// Proyeccion: cuanto falta para terminar + abono extra topado
-// ----
-
-// La barra recuerda donde la dejo el usuario entre renders (el tope la limita)
-let abonoExtra = 0;
-
-function renderizarProyeccion(plan, cargado) {
-  const bloque = porId('bloque-proyeccion');
-  const barra = porId('abono-extra');
-  const nota = porId('abono-nota');
-
-  if (!cargado) {
-    bloque.classList.add('hidden');
-    return;
-  }
-
-  bloque.classList.remove('hidden');
-
-  // Paz mental: la barra nunca pasa del tope y se bloquea si no hay margen
-  const tope = topeAbonoExtra(plan.excedente);
-  barra.max = tope;
-  barra.disabled = plan.estado !== 'plan' || tope === 0;
-  if (abonoExtra > tope) {
-    abonoExtra = tope;
-  }
-  barra.value = abonoExtra;
-
-  if (plan.estado === 'insuficiente') {
-    nota.textContent = 'Tus pagos mínimos superan tu capacidad: por ahora no se puede aumentar el abono.';
-  } else if (plan.estado === 'sin-deudas') {
-    nota.textContent = 'Cuando registres deudas, aquí podrás simular un abono extra.';
-  } else if (tope === 0) {
-    nota.textContent = 'Tu excedente está muy justo: por paz mental, mejor no aumentar el abono.';
-  } else {
-    nota.textContent = `Puedes subir hasta ${formatearPesos(tope)}: se dejan ${formatearPesos(plan.excedente - tope)} libres para ocio e imprevistos.`;
-  }
-
-  porId('abono-valor').textContent = `${formatearPesos(abonoExtra)}/mes`;
-
-  const proyeccion = proyectarSalidaDeuda(estado.deudas, abonoExtra);
-  porId('proyeccion-tiempo').textContent = textoProyeccion(proyeccion);
-}
-
-// Mover la barra solo recalcula la proyeccion, no repite todo el render
-porId('abono-extra').addEventListener('input', function () {
-  abonoExtra = Number(porId('abono-extra').value);
-  porId('abono-valor').textContent = `${formatearPesos(abonoExtra)}/mes`;
-  const proyeccion = proyectarSalidaDeuda(estado.deudas, abonoExtra);
-  porId('proyeccion-tiempo').textContent = textoProyeccion(proyeccion);
-});
-
 function mostrarUsuario(usuario) {
   porId('usuario-nombre').textContent = usuario.nombre;
   porId('usuario-actual').classList.remove('hidden');
@@ -274,6 +457,7 @@ async function cargarDatos() {
 
 async function iniciar() {
   porId('periodo-nombre').textContent = nombreDelPeriodo(periodo);
+  conectarCronograma();
 
   // Mientras llegan los datos se muestra todo en cero y ningun plan
   renderizar();
