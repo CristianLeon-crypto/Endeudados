@@ -16,7 +16,17 @@ const SUPABASE_URL = 'https://nuuqonentwzzhptkjjyh.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_q6mqvT5opf6IdhtSQ8Kq0Q_H-BlIRxT';
 
 // `supabase` es el global que expone el SDK del CDN.
-const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+//
+// persistSession y autoRefreshToken ya son el valor por defecto del SDK; se
+// dejan explícitos aca para que quede documentado que la sesión debe
+// sobrevivir un F5 (recargar la página sin perder la sesión) y nadie los
+// desactive sin darse cuenta en el futuro.
+const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true
+  }
+});
 
 // URL base de la pantalla de recuperacion, calculada en tiempo de ejecucion.
 // Asi el correo de recuperacion apunta a donde el usuario realmente esta:
