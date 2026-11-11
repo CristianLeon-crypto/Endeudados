@@ -147,12 +147,15 @@
                     </article>
 
                 </div>
-                <!-- Proyeccion: cuanto falta para terminar de pagar, con un
-                     abono extra topado para dejar margen de ocio -->
+                <!-- Abono extra (EN-50): cuanto tiempo e intereses se ahorra con un
+                     extra al mes, topado para dejar margen de ocio -->
                 <div id="bloque-proyeccion" class="tarjeta plan-proyeccion hidden">
-                    <h2 class="proyeccion-titulo">¿Cuánto falta para terminar de pagar?</h2>
+                    <h2 class="proyeccion-titulo">¿Cuánto te ahorras con un abono extra?</h2>
 
-                    <p id="proyeccion-tiempo" class="proyeccion-tiempo">—</p>
+                    <div aria-live="polite">
+                        <p id="proyeccion-tiempo" class="proyeccion-tiempo">—</p>
+                        <p id="proyeccion-ahorro" class="proyeccion-ahorro hidden"></p>
+                    </div>
 
                     <label for="abono-extra" class="proyeccion-etiqueta">
                         Abono extra al mes: <strong id="abono-valor">$ 0</strong>
