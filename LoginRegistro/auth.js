@@ -44,6 +44,14 @@ formRegistro.addEventListener('submit', async function (event) {
     return;
   }
 
+  if (!document.getElementById('reg-autorizo').checked) {
+    mostrarError(
+      regError,
+      'Para crear tu cuenta debes autorizar el tratamiento de tus datos personales.'
+    );
+    return;
+  }
+
   try {
     // Un solo paso. Nombre y cédula viajan dentro del signUp y el perfil en
     // public.usuarios lo crea un trigger en la base de datos (EN-24, EN-25).

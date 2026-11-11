@@ -666,3 +666,14 @@
   color: var(--marfil-suave);
   border-top: 1px solid var(--borde);
 }
+
+/* Enlaces a la politica de tratamiento de datos (EN-52) */
+#seguridad .texto-seccion a,
+.footer a {
+  color: var(--terracota-claro);
+  text-decoration: underline;
+}
+
+.footer p + p {
+  margin-top: 0.5rem;
+}

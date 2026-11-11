@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endeudados - Política de tratamiento de datos personales</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../shared/base.css">
+  <link rel="stylesheet" href="privacidad.css">
+</head>
+<body>
+
+  <header class="navbar">
+    <a href="../index.html" class="logo">
+      <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
+        <defs>
+          <linearGradient id="logo-degradado" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#1C1C1C" />
+            <stop offset="1" stop-color="#28B660" />
+          </linearGradient>
+        </defs>
+        <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#logo-degradado)" stroke="#F3ECDE" stroke-opacity="0.18" />
+        <rect x="9" y="11" width="22" height="4" rx="2" fill="#F3ECDE" />
+        <rect x="9" y="18" width="15" height="4" rx="2" fill="#F3ECDE" />
+        <rect x="9" y="25" width="8" height="4" rx="2" fill="#A9501C" />
+      </svg>
+      <span class="logo-texto">Endeudados</span>
+    </a>
+    <div class="nav-buttons">
+      <a href="../index.html" class="btn btn-ghost">
+        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg>
+        <span>Volver al inicio</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="seccion">
+    <div class="contenedor contenedor-politica">
+
+      <div class="encabezado-seccion izquierda">
+        <h1 class="titulo-seccion">Política de tratamiento de <span class="acento-serif">datos personales</span></h1>
+        <p class="texto-seccion">Vigente desde el 11 de noviembre de 2026. Aquí te contamos qué hace Endeudados con tus datos, para que decidas si te registras.</p>
+      </div>
+
+      <section class="tarjeta politica-bloque" aria-labelledby="t-responsable">
+        <h2 id="t-responsable">Quién es el responsable</h2>
+        <p>Endeudados es un proyecto académico de Ingeniería de Software de la Universidad Sergio Arboleda (Bogotá), 2026.</p>
+        <p>Contacto para cualquier solicitud o queja: <strong id="correo-contacto">[CORREO DE CONTACTO]</strong></p>
+      </section>
+
+      <section class="tarjeta politica-bloque" aria-labelledby="t-datos">
+        <h2 id="t-datos">Qué datos guardamos</h2>
+        <p>Solo estos:</p>
+        <ul>
+          <li>Tu nombre.</li>
+          <li>Tu número de cédula.</li>
+          <li>Tu correo electrónico.</li>
+          <li>Tu contraseña. La guarda Supabase Auth cifrada con hash: nadie del equipo puede verla.</li>
+          <li>Lo que tú registras: ingresos, gastos (incluidos los gastos hormiga), deudas (nombre, saldo, tasa y pago mínimo) y abonos.</li>
+        </ul>
+      </section>
+
+      <section class="tarjeta politica-bloque" aria-labelledby="t-para-que">
+        <h2 id="t-para-que">Para qué los usamos</h2>
+        <p>Únicamente para mostrarte tu resumen del mes y calcular tu plan de pago. Nada más.</p>
+      </section>
+
+      <section class="tarjeta politica-bloque" aria-labelledby="t-no">
+        <h2 id="t-no">Lo que no hacemos</h2>
+        <ul>
+          <li>No vendemos tus datos ni los compartimos con terceros.</li>
+          <li>No los reportamos a centrales de riesgo (DataCrédito, Cifin/TransUnion). Endeudados no es operador ni fuente de información financiera en los términos de la Ley 1266 de 2008.</li>
+          <li>No los usamos para publicidad.</li>
+          <li>No usamos cookies de seguimiento ni analítica.</li>
+        </ul>
+      </section>
+
+      <section class="tarjeta politica-bloque" aria-labelledby="t-donde">
+        <h2 id="t-donde">Dónde se guardan y cómo se protegen</h2>
+        <ul>
+          <li>Tus datos se guardan en Supabase, con servidores en Canadá (región ca-central-1). Es una transferencia internacional de datos (Ley 1581 de 2012, artículo 26) que autorizas al registrarte.</li>
+          <li>El sitio lo sirve Vercel.</li>
+          <li>Van cifrados en tránsito (HTTPS) y en reposo (lo da Supabase).</li>
+          <li>Cada usuario solo puede ver sus propios datos. Lo garantiza la base de datos con seguridad a nivel de fila (RLS), no solo la pantalla.</li>
+        </ul>
+      </section>
+
+      <section class="tarjeta politica-bloque" aria-labelledby="t-derechos">
+        <h2 id="t-derechos">Tus derechos</h2>
+        <p>Como titular tienes los derechos del artículo 8 de la Ley 1581 de 2012. Así se ejercen hoy dentro de la app:</p>
+        <ul>
+          <li><strong>Conocer y consultar:</strong> ves todo lo que registraste en Ingresos y gastos, Deudas y Plan de pagos.</li>
+          <li><strong>Actualizar y rectificar:</strong> puedes editar cualquier registro, y tu nombre y cédula en Mi perfil. El correo no se puede cambiar desde la app.</li>
+          <li><strong>Suprimir:</strong> en Mi perfil, Eliminar mi cuenta. Borra la cuenta y todos sus datos de forma inmediata y definitiva; no quedan copias en la aplicación.</li>
+          <li><strong>Revocar la autorización:</strong> es lo mismo, eliminar la cuenta.</li>
+        </ul>
+        <p>Para cualquier otra solicitud o queja, escribe al correo de contacto.</p>
+      </section>
+
+      <section class="tarjeta politica-bloque" aria-labelledby="t-vigencia">
+        <h2 id="t-vigencia">Vigencia</h2>
+        <p>Esta política rige desde el 11 de noviembre de 2026. Tus datos se conservan mientras tu cuenta exista.</p>
+      </section>
+
+    </div>
+  </main>
+
+</body>
+</html>
