@@ -3,7 +3,7 @@
 ## Ramas
 
 ```
-main       producción. Solo recibe PR desde develop
+main       producción. Solo recibe lo que viene de develop
 develop    integración. Aquí llega todo lo terminado del sprint
 feature/EN-88-plan-de-pago     trabajo nuevo
 fix/EN-55-indice-deudas        correcciones
@@ -18,12 +18,11 @@ git checkout -b feature/EN-88-plan-de-pago
 
 ## El número del ticket va en todo
 
-En la rama, en el commit y en el título del PR. Es lo que permite que desde un
-ticket de Jira se llegue al código y al revés.
+En la rama, en el commit y, si se abre PR, en su título. Es lo que permite que
+desde un ticket de Jira se llegue al código y al revés.
 
 ```bash
 git commit -m "feat(deudas): calcula el plan mensual (EN-88)"
-gh pr create --base develop --title "feat(deudas): plan de pago mensual (EN-88)"
 ```
 
 ## Mensajes de commit
@@ -42,7 +41,8 @@ Un ticket pasa a Finalizada solo cuando:
 
 1. El criterio de aceptación del ticket se cumple.
 2. Alguien lo probó funcionando, no solo que el código está escrito.
-3. Hay un PR mergeado, y su enlace está en el ticket.
+3. El cambio está en `main` (o sea, en producción), y el enlace al commit o al
+   PR está en el ticket.
 
 Escribir el código no es terminar.
 
@@ -54,6 +54,12 @@ repo queda mintiendo y no hay forma de saber qué hay en producción.
 
 ## Revisión
 
-Ningún PR se mergea sin que otra persona lo mire. Si alguien lleva más de un día
-esperando revisión, se dice en el daily como bloqueo: es lo único que lo
-desatasca.
+El PR es opcional: el profe dijo (9-nov) que con 4 personas no hace falta.
+Quien termina puede mergear directo a `develop`.
+
+Lo que no es opcional es el punto 2 de la definición de terminado: **otra
+persona** prueba el cambio funcionando antes de pasarlo a Finalizada. Sin PR,
+esa prueba es la única revisión que queda.
+
+Si se abre un PR y lleva más de un día esperando, se dice en el daily como
+bloqueo.
