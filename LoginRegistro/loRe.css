@@ -52,3 +52,32 @@
   color: var(--terracota-claro);
   text-decoration: underline;
 }
+
+/* Cajas de login y registro uniformes (EN-XX)
+ * Se limita a .auth-form para no afectar otras pantallas que usan base.css. */
+.auth-form .form-group input {
+  display: block;
+  width: 100%;
+  height: 3rem;              /* misma altura para text, email y password */
+  padding: 0 1rem;
+  line-height: 1.2;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* El boton ya trae su propio margen superior: sin esto se suma al del ultimo campo */
+.auth-form .form-group:last-of-type {
+  margin-bottom: 0;
+}
+
+/* Autocompletado: mantiene el fondo oscuro y el texto marfil */
+.auth-form .form-group input:-webkit-autofill,
+.auth-form .form-group input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--marfil);
+  caret-color: var(--marfil);
+  box-shadow: 0 0 0 1000px #0f1a14 inset;
+}
+
+.auth-form .form-group input:-webkit-autofill:focus {
+  box-shadow: 0 0 0 1000px #0f1a14 inset, 0 0 0 3px rgba(40, 182, 96, 0.22);
+}
