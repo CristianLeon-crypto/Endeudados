@@ -18,7 +18,9 @@ const estado = {
   gastos: [],
   gastosHormiga: [],
   deudas: [],
-  abonos: []
+  abonos: [],
+  // Abono extra que eligio el usuario en la barra (EN-50)
+  abonoExtra: 0
 };
 
 // Un grafico por seccion; se destruyen y recrean en cada render
@@ -142,59 +144,108 @@ function renderizar() {
   renderizarEstadoFinanciero();
   renderizarDistribucionDeudas();
   renderizarRatios();
-  // ----
-  // Proyeccion: cuanto falta para terminar + abono extra topado
-  // ----
-
-  let abonoExtra = 0;
-
-  function renderizarProyeccion() {
-    const bloque = porId('bloque-proyeccion');
-    const barra = porId('abono-extra');
-    const nota = porId('abono-nota');
-
-    // Antes de la sesion y los datos no se muestra nada
-    if (!estado.usuario) {
-      bloque.classList.add('hidden');
-      return;
-    }
-
-    // El excedente se calcula igual que en Plan de pagos
-    const plan = calcularPlanPagos(estado.ingresos, estado.gastos, estado.deudas);
-    bloque.classList.remove('hidden');
-
-    const tope = topeAbonoExtra(plan.excedente);
-    barra.max = tope;
-    barra.disabled = plan.estado !== 'plan' || tope === 0;
-    if (abonoExtra > tope) {
-      abonoExtra = tope;
-    }
-    barra.value = abonoExtra;
-
-    if (plan.estado === 'insuficiente') {
-      nota.textContent = 'Tus pagos mínimos superan tu capacidad: por ahora no se puede aumentar el abono.';
-    } else if (plan.estado === 'sin-deudas') {
-      nota.textContent = 'Cuando registres deudas, aquí podrás simular un abono extra.';
-    } else if (tope === 0) {
-      nota.textContent = 'Tu excedente está muy justo: por paz mental, mejor no aumentar el abono.';
-    } else {
-      nota.textContent = `Puedes subir hasta ${formatearPesos(tope)}: se dejan ${formatearPesos(plan.excedente - tope)} libres para ocio e imprevistos.`;
-    }
-
-    porId('abono-valor').textContent = `${formatearPesos(abonoExtra)}/mes`;
-
-    const proyeccion = proyectarSalidaDeuda(estado.deudas, abonoExtra);
-    porId('proyeccion-tiempo').textContent = textoProyeccion(proyeccion);
-  }
-
-  porId('abono-extra').addEventListener('input', function () {
-    abonoExtra = Number(porId('abono-extra').value);
-    porId('abono-valor').textContent = `${formatearPesos(abonoExtra)}/mes`;
-    const proyeccion = proyectarSalidaDeuda(estado.deudas, abonoExtra);
-    porId('proyeccion-tiempo').textContent = textoProyeccion(proyeccion);
-  });
   renderizarProyeccion();
   renderizarAbonos();
+}
+
+// ---------------------------------------------------------------------------
+// Abono extra (EN-50): cuanto tiempo e intereses se ahorra con un extra al mes
+// ---------------------------------------------------------------------------
+
+function renderizarProyeccion() {
+  const bloque = porId('bloque-proyeccion');
+  const barra = porId('abono-extra');
+  const nota = porId('abono-nota');
+
+  // Antes de la sesion y los datos no se muestra nada
+  if (!estado.usuario) {
+    bloque.classList.add('hidden');
+    return;
+  }
+  bloque.classList.remove('hidden');
+
+  // El excedente se calcula igual que en Plan de pagos
+  const plan = calcularPlanPagos(estado.ingresos, estado.gastos, estado.deudas);
+  const tope = topeAbonoExtra(plan.excedente);
+  barra.max = tope;
+  barra.disabled = plan.estado !== 'plan' || tope === 0;
+  estado.abonoExtra = Math.min(estado.abonoExtra, tope);
+  barra.value = estado.abonoExtra;
+
+  if (plan.estado === 'insuficiente') {
+    nota.textContent = 'Tus pagos mínimos superan tu capacidad: por ahora no se puede aumentar el abono.';
+  } else if (plan.estado === 'sin-deudas') {
+    nota.textContent = 'Cuando registres deudas, aquí podrás simular un abono extra.';
+  } else if (tope === 0) {
+    nota.textContent = 'Tu excedente está muy justo: por paz mental, mejor no aumentar el abono.';
+  } else {
+    nota.textContent = `Puedes subir hasta ${formatearPesos(tope)}: se dejan ${formatearPesos(plan.excedente - tope)} libres para ocio e imprevistos.`;
+  }
+
+  renderizarSimulacion();
+}
+
+// Solo lo que cambia al mover la barra: no recalcula el plan ni la nota
+function renderizarSimulacion() {
+  porId('abono-valor').textContent = `${formatearPesos(estado.abonoExtra)}/mes`;
+
+  const simulacion = simularAbonoExtra(estado.deudas, estado.abonoExtra, periodo);
+  const textos = textosAbonoExtra(simulacion);
+  porId('proyeccion-tiempo').textContent = textos.tiempo;
+  porId('proyeccion-ahorro').textContent = textos.ahorro;
+  porId('proyeccion-ahorro').classList.toggle('hidden', !textos.ahorro);
+}
+
+// { tiempo, ahorro }: la frase principal y la comparacion con pagar solo los
+// minimos. Si el abono no cubre los intereses se dice, sin mostrar un numero.
+function textosAbonoExtra(simulacion) {
+  const extra = simulacion.abonoExtra;
+
+  if (simulacion.estado === 'sin-deudas') {
+    return { tiempo: 'No tienes deudas registradas: ya estás libre.', ahorro: '' };
+  }
+  if (simulacion.estado === 'no-termina') {
+    if (simulacion.motivo === 'plazo') {
+      return { tiempo: extra > 0 ? 'Con este abono no terminas de pagar ni en 50 años.' : 'Pagando solo los mínimos no terminas de pagar ni en 50 años.', ahorro: 'Sube el abono extra para ver cuándo terminarías.' };
+    }
+    return {
+      tiempo: extra > 0
+        ? 'Con este abono la deuda nunca se termina: lo que pagas no cubre los intereses.'
+        : 'Pagando solo los mínimos la deuda nunca se termina: no alcanzan a cubrir los intereses.',
+      ahorro: 'Sube el abono extra para ver cuándo terminarías.'
+    };
+  }
+
+  const con = simulacion.conExtra;
+  const cuando = `${textoDuracion(con.meses)}, en ${nombreDelPeriodo(con.periodoLibre)}`;
+
+  if (extra === 0) {
+    return {
+      tiempo: `Pagando solo los mínimos terminas en ${cuando}, y pagas ${formatearPesos(con.totalIntereses)} en intereses.`,
+      ahorro: 'Mueve la barra para ver cuánto te ahorras con un abono extra.'
+    };
+  }
+
+  const tiempo = `Con ${formatearPesos(extra)} extra al mes terminas en ${cuando}.`;
+  if (simulacion.mesesAhorrados === null) {
+    return { tiempo, ahorro: 'Pagando solo los mínimos nunca terminarías: este abono es lo que hace que la deuda se acabe.' };
+  }
+  const intereses = `${formatearPesos(simulacion.interesesAhorrados)} menos en intereses`;
+  return {
+    tiempo,
+    ahorro: simulacion.mesesAhorrados > 0
+      ? `Son ${textoDuracion(simulacion.mesesAhorrados)} antes y ${intereses} que pagando solo los mínimos.`
+      : `Terminas el mismo mes, pero pagas ${intereses} que pagando solo los mínimos.`
+  };
+}
+
+function conectarAbonoExtra() {
+  // Una sola vez: renderizar() corre en cada cambio y antes registraba otro
+  // listener cada vez que pintaba.
+  porId('abono-extra').addEventListener('input', function () {
+    estado.abonoExtra = Number(porId('abono-extra').value);
+    renderizarSimulacion();
+  });
 }
 
 function renderizarEstadoFinanciero() {
@@ -463,6 +514,7 @@ async function iniciar() {
   porId('periodo-nombre').textContent = nombreDelPeriodo(periodo);
   conectarFormularioAbono();
   conectarListaAbonos();
+  conectarAbonoExtra();
   renderizar();
 
   try {

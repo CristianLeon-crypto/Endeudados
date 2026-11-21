@@ -369,6 +369,122 @@ test('cronograma: si no se termina en 50 anios la deuda queda sin mes', function
   assert.equal(fila.meses, null);
 });
 
+// ---------------------------------------------------------------------------
+// Abono extra (EN-50)
+// ---------------------------------------------------------------------------
+
+test('abono extra: una deuda sola, verificada a mano', function () {
+  // 300.000 al 1% mensual con minimo de 100.000:
+  //   solo minimos  mes 1: 200.000 + 2.000 = 202.000
+  //                 mes 2: 102.000 + 1.020 = 103.020
+  //                 mes 3:   3.020 +    30 =   3.050
+  //                 mes 4: se pagan 3.050 -> 4 meses, 3.050 de intereses
+  //   con 100.000 extra (200.000 al mes)
+  //                 mes 1: 100.000 + 1.000 = 101.000
+  //                 mes 2: se pagan 101.000 -> 2 meses, 1.000 de intereses
+  const r = simularAbonoExtra([deuda('Tarjeta', 300000, EA_UNO_POR_CIENTO_MENSUAL, 100000)], 100000, '2026-11');
+
+  assert.equal(r.estado, 'libre');
+  assert.equal(r.sinExtra.meses, 4);
+  assert.equal(r.sinExtra.totalIntereses, 3050);
+  assert.equal(r.conExtra.meses, 2);
+  assert.equal(r.conExtra.totalIntereses, 1000);
+  assert.equal(r.conExtra.periodoLibre, '2026-12');
+  assert.equal(r.mesesAhorrados, 2);
+  assert.equal(r.interesesAhorrados, 2050);
+});
+
+test('abono extra: cuenta igual que la fecha libre de deudas (EN-77)', function () {
+  // Reusa la misma simulacion: con capacidad = minimos + extra, los meses y
+  // los intereses son los mismos que da simularLibreDeDeudas.
+  const deudas = [
+    deuda('Tarjeta', 2500000, 38, 120000),
+    deuda('Credito', 6000000, 18, 250000),
+    deuda('Celular', 400000, 28, 60000)
+  ];
+  const r = simularAbonoExtra(deudas, 300000, '2026-11');
+  const mismoPresupuesto = mesCon(120000 + 250000 + 60000 + 300000, 0);
+  const libre = simularLibreDeDeudas(mismoPresupuesto.ingresos, mismoPresupuesto.gastos, deudas, '2026-11');
+
+  assert.equal(r.conExtra.meses, libre.meses);
+  assert.equal(r.conExtra.totalIntereses, libre.totalIntereses);
+  assert.equal(r.conExtra.periodoLibre, libre.periodoLibre);
+});
+
+test('abono extra: mas abono, menos meses y menos intereses', function () {
+  const deudas = [deuda('Tarjeta', 2500000, 38, 120000), deuda('Credito', 6000000, 18, 250000)];
+  const poco = simularAbonoExtra(deudas, 100000, '2026-11');
+  const mucho = simularAbonoExtra(deudas, 400000, '2026-11');
+
+  assert.ok(mucho.conExtra.meses < poco.conExtra.meses);
+  assert.ok(mucho.interesesAhorrados > poco.interesesAhorrados);
+  assert.ok(poco.mesesAhorrados > 0);
+});
+
+test('abono extra: en cero no hay ahorro y las dos simulaciones son la misma', function () {
+  const r = simularAbonoExtra([deuda('Tarjeta', 2500000, 38, 120000)], 0, '2026-11');
+
+  assert.equal(r.conExtra, r.sinExtra);
+  assert.equal(r.mesesAhorrados, 0);
+  assert.equal(r.interesesAhorrados, 0);
+});
+
+test('abono extra: si con los minimos no se termina, el extra es lo que la acaba', function () {
+  // 10.000.000 al 1% mensual cobra 100.000 de interes: un minimo de 50.000 no
+  // lo cubre.
+  const deudas = [deuda('Credito', 10000000, EA_UNO_POR_CIENTO_MENSUAL, 50000)];
+
+  const sinAbono = simularAbonoExtra(deudas, 0, '2026-11');
+  assert.equal(sinAbono.estado, 'no-termina');
+  assert.equal(sinAbono.motivo, 'intereses');
+
+  const conAbono = simularAbonoExtra(deudas, 250000, '2026-11');
+  assert.equal(conAbono.estado, 'libre');
+  assert.equal(conAbono.sinExtra.estado, 'no-termina');
+  // No hay un numero de meses contra el cual comparar
+  assert.equal(conAbono.mesesAhorrados, null);
+  assert.equal(conAbono.interesesAhorrados, null);
+});
+
+test('abono extra: si el abono no cubre los intereses lo dice en vez de dar un numero', function () {
+  const r = simularAbonoExtra([deuda('Credito', 10000000, EA_UNO_POR_CIENTO_MENSUAL, 50000)], 30000, '2026-11');
+
+  assert.equal(r.estado, 'no-termina');
+  assert.equal(r.motivo, 'intereses');
+  assert.equal(r.conExtra.periodoLibre, null);
+  assert.equal(r.mesesAhorrados, null);
+});
+
+test('abono extra: sin deudas con saldo no hay nada que simular', function () {
+  assert.equal(simularAbonoExtra([], 100000, '2026-11').estado, 'sin-deudas');
+  assert.equal(simularAbonoExtra([deuda('Saldada', 0, 30, 50000)], 100000, '2026-11').estado, 'sin-deudas');
+});
+
+test('abono extra: no modifica las deudas que recibe', function () {
+  const deudas = [deuda('Tarjeta', 2500000, 38, 120000), deuda('Credito', 6000000, 18, 250000)];
+  const copia = JSON.stringify(deudas);
+
+  simularAbonoExtra(deudas, 200000, '2026-11');
+
+  assert.equal(JSON.stringify(deudas), copia);
+});
+
+test('abono extra: el tope es el 70% del excedente en pasos de 10.000', function () {
+  assert.equal(topeAbonoExtra(500000), 350000);
+  assert.equal(topeAbonoExtra(123456), 80000);
+  assert.equal(topeAbonoExtra(10000), 0);
+  assert.equal(topeAbonoExtra(0), 0);
+  assert.equal(topeAbonoExtra(-50000), 0);
+});
+
+test('abono extra: la duracion se escribe en anios y meses', function () {
+  assert.equal(textoDuracion(1), '1 mes');
+  assert.equal(textoDuracion(7), '7 meses');
+  assert.equal(textoDuracion(12), '1 año');
+  assert.equal(textoDuracion(14), '1 año y 2 meses');
+  assert.equal(textoDuracion(25), '2 años y 1 mes');
+});
+
 test('sumarMesesAPeriodo cruza de anio', function () {
   assert.equal(sumarMesesAPeriodo('2026-11', 0), '2026-11');
   assert.equal(sumarMesesAPeriodo('2026-11', 2), '2027-01');

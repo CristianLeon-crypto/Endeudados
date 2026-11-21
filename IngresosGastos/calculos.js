@@ -423,9 +423,16 @@ function simularLibreDeDeudas(ingresos, gastos, deudas, periodoInicial) {
     return resultado;
   }
 
+  return simularMeses(conSaldo, resultado, periodoInicial);
+}
+
+// El ciclo mes a mes, con la capacidad que trae resultado.capacidad. Lo usan
+// la fecha libre de deudas (EN-77), con la capacidad del mes, y el simulador
+// de abono extra (EN-50), con los minimos mas el extra.
+function simularMeses(deudas, resultado, periodoInicial) {
   // Copias: la simulacion baja los saldos mes a mes y no debe tocar las deudas
   // que tiene la pantalla.
-  let vigentes = conSaldo.map(function (deuda) { return Object.assign({}, deuda); });
+  let vigentes = deudas.map(function (deuda) { return Object.assign({}, deuda); });
   let saldoAnterior = sumarSaldos(vigentes);
 
   while (vigentes.length > 0) {
@@ -660,12 +667,14 @@ function nombreDelPeriodo(periodo) {
 }
 
 // ---------------------------------------------------------------------------
-// Proyeccion: cuanto falta para terminar de pagar (con interes)
+// Abono extra (EN-50)
+//
+// Cuanto tiempo e intereses se ahorra el usuario si, ademas de los minimos,
+// abona un extra fijo cada mes. Compara dos simulaciones con el mismo ciclo
+// de simularMeses() que usa la fecha libre de deudas (EN-77): pagando solo los
+// minimos, y pagando los minimos mas el extra. Asi la pantalla de Deudas y el
+// Plan de pagos cuentan los meses y los intereses de la misma forma.
 // ---------------------------------------------------------------------------
-
-// Tope de meses simulados (50 anos): evita colgar la pantalla cuando el pago
-// apenas cubre los intereses.
-const MESES_MAXIMOS_PROYECCION = 600;
 
 // Del excedente del mes solo se puede comprometer en abonos extra una parte.
 // El resto queda libre para ocio, imprevistos y paz mental.
@@ -681,89 +690,67 @@ function topeAbonoExtra(excedente) {
   return Math.floor((excedente * PORCENTAJE_ABONABLE) / PASO_ABONO_EXTRA) * PASO_ABONO_EXTRA;
 }
 
-// Cuantos meses faltan para pagar TODAS las deudas si cada mes se pagan los
-// minimos mas un abono extra, con interes compuesto y avalancha.
-// deudas: [{ nombre, saldo, tasaEA, pagoMinimo }], igual que la capa de datos.
-// Devuelve { estado, meses, interesesTotales }:
-//   'sin-deudas'  no hay deudas que pagar
-//   'no_amortiza' lo que se paga no cubre los intereses: la deuda crece
-//   'limite'      con ese pago no se termina en 50 anos
-//   'ok'          meses: cuanto falta; interesesTotales: interes pagado en total
-function proyectarSalidaDeuda(deudas, abonoExtra) {
-  if (!deudas.length) {
-    return { estado: 'sin-deudas' };
+// Una simulacion con una capacidad fija cada mes
+function simularConCapacidad(deudas, capacidad, periodoInicial) {
+  return simularMeses(deudas, {
+    estado: 'plan',
+    motivo: null,
+    capacidad,
+    faltante: 0,
+    meses: 0,
+    periodoLibre: null,
+    totalIntereses: 0,
+    totalPagado: 0,
+    cronograma: []
+  }, periodoInicial);
+}
+
+// deudas: [{ id, nombre, saldo, tasaEA, pagoMinimo }], igual que la capa de datos.
+//
+// estado:
+//   'sin-deudas'  no hay deudas con saldo
+//   'no-termina'  aun con el extra la deuda no se termina; motivo:
+//                   'intereses'  lo que se paga no cubre los intereses
+//                   'plazo'      tardaria mas de 50 anios
+//   'libre'       conExtra.meses y conExtra.periodoLibre dicen cuando. Si
+//                 solo con los minimos tambien termina, mesesAhorrados e
+//                 interesesAhorrados dicen la diferencia; si no, quedan en null
+//                 y sinExtra.estado es 'no-termina'.
+function simularAbonoExtra(deudas, abonoExtra, periodoInicial) {
+  const conSaldo = deudas.filter(function (deuda) { return deuda.saldo > 0; });
+  if (conSaldo.length === 0) {
+    return { estado: 'sin-deudas', motivo: null, abonoExtra, sinExtra: null, conExtra: null, mesesAhorrados: null, interesesAhorrados: null };
   }
 
-  const tasas = deudas.map(function (deuda) {
-    return tasaMensualEquivalente(deuda.tasaEA);
-  });
-  const saldos = deudas.map(function (deuda) { return deuda.saldo; });
-  const presupuesto = deudas.reduce(function (total, deuda) {
+  const minimos = conSaldo.reduce(function (total, deuda) {
     return total + Math.min(deuda.pagoMinimo, deuda.saldo);
-  }, 0) + abonoExtra;
-
-  const interesesPrimerMes = deudas.reduce(function (total, _, i) {
-    return total + saldos[i] * tasas[i];
   }, 0);
-  if (presupuesto <= interesesPrimerMes) {
-    return { estado: 'no_amortiza' };
-  }
 
-  // Avalancha: la plata va primero a la deuda de mayor tasa
-  const orden = deudas.map(function (_, i) { return i; }).sort(function (a, b) {
-    return tasas[b] - tasas[a];
-  });
+  const sinExtra = simularConCapacidad(conSaldo, minimos, periodoInicial);
+  const conExtra = abonoExtra > 0
+    ? simularConCapacidad(conSaldo, minimos + abonoExtra, periodoInicial)
+    : sinExtra;
 
-  let meses = 0;
-  let interesesTotales = 0;
-
-  while (meses < MESES_MAXIMOS_PROYECCION && saldos.some(function (saldo) { return saldo > 0.5; })) {
-    meses++;
-    deudas.forEach(function (_, i) {
-      const interes = saldos[i] * tasas[i];
-      interesesTotales += interes;
-      saldos[i] += interes;
-    });
-
-    let bolsa = presupuesto;
-    orden.forEach(function (i) {
-      const pago = Math.min(bolsa, saldos[i]);
-      saldos[i] -= pago;
-      bolsa -= pago;
-    });
-  }
-
-  if (saldos.some(function (saldo) { return saldo > 0.5; })) {
-    return { estado: 'limite' };
-  }
-
-  return { estado: 'ok', meses, interesesTotales: Math.round(interesesTotales) };
+  const ambasTerminan = sinExtra.estado === 'libre' && conExtra.estado === 'libre';
+  return {
+    estado: conExtra.estado,
+    motivo: conExtra.motivo,
+    abonoExtra,
+    sinExtra,
+    conExtra,
+    mesesAhorrados: ambasTerminan ? sinExtra.meses - conExtra.meses : null,
+    interesesAhorrados: ambasTerminan ? sinExtra.totalIntereses - conExtra.totalIntereses : null
+  };
 }
 
-// 'ok' con 14 meses desde noviembre de 2026 -> 'enero de 2028'
-function fechaQuedaLibre(meses) {
-  const fecha = new Date();
-  fecha.setMonth(fecha.getMonth() + meses);
-  return fecha.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+// 14 -> '1 año y 2 meses'
+function textoDuracion(meses) {
+  const anios = Math.floor(meses / 12);
+  const resto = meses % 12;
+  const textoMeses = function (n) { return `${n} ${n === 1 ? 'mes' : 'meses'}`; };
+  if (anios === 0) {
+    return textoMeses(meses);
+  }
+  const textoAnios = `${anios} ${anios === 1 ? 'año' : 'años'}`;
+  return resto ? `${textoAnios} y ${textoMeses(resto)}` : textoAnios;
 }
-
-// Texto del tiempo restante, igual en las dos pantallas que lo muestran
-function textoProyeccion(proyeccion) {
-  if (proyeccion.estado === 'sin-deudas') {
-    return 'No tienes deudas registradas: ya estás libre.';
-  }
-  if (proyeccion.estado === 'no_amortiza') {
-    return 'Con este abono la deuda nunca se termina: lo que pagas no cubre los intereses.';
-  }
-  if (proyeccion.estado === 'limite') {
-    return 'Con este abono no se termina ni en 50 años. Sube el abono extra.';
-  }
-
-  const anios = Math.floor(proyeccion.meses / 12);
-  const resto = proyeccion.meses % 12;
-  const duracion = anios > 0
-    ? `${anios} ${anios === 1 ? 'año' : 'años'}${resto ? ` y ${resto} ${resto === 1 ? 'mes' : 'meses'}` : ''}`
-    : `${proyeccion.meses} ${proyeccion.meses === 1 ? 'mes' : 'meses'}`;
-  return `${duracion}, quedando libre en ${fechaQuedaLibre(proyeccion.meses)}.`;
-}
-
