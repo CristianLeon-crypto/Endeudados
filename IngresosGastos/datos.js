@@ -9,6 +9,7 @@
 //   gastos    id int8 | usuario_id | descripcion | categoria | monto | fecha | tipo ('esencial'|'hormiga') | creado_en
 //   deudas    id int8 | usuario_id | nombre | saldo | tasa_ea | pago_minimo | fecha | creado_en
 //   usuarios  id uuid | auth_id -> auth.users.id | cedula | nombre | email
+//   opiniones_plan id int8 | usuario_id | periodo | sirve | creado_en (EN-108)
 //
 // Mapeo pantalla <-> base (se traduce SOLO aca):
 //   concepto     <-> descripcion
@@ -348,6 +349,38 @@ async function agregarAbono(datos) {
 async function eliminarAbono(id) {
   const { error } = await sbClient.from('abonos').delete().eq('id', id);
   if (error) throw error;
+}
+
+// ----
+// Opinion del plan (EN-108): "¿Este plan te sirve?", una respuesta por mes
+//
+// Tabla opiniones_plan  id | usuario_id | periodo ('AAAA-MM') | sirve | creado_en
+// con unique (usuario_id, periodo). El SQL esta en supabase/EN-108-opiniones-plan.sql
+// ----
+
+// true / false si ya respondio ese mes; null si todavia no
+async function obtenerOpinionPlan(periodo) {
+  const usuario = await getUsuarioActual();
+  const { data, error } = await sbClient
+    .from('opiniones_plan')
+    .select('sirve')
+    .eq('usuario_id', usuario.id)
+    .eq('periodo', periodo)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? data.sirve : null;
+}
+
+// Si ya habia respuesta ese mes se reemplaza: sigue habiendo una sola
+async function guardarOpinionPlan(periodo, sirve) {
+  const usuario = await getUsuarioActual();
+  const { data, error } = await sbClient
+    .from('opiniones_plan')
+    .upsert({ usuario_id: usuario.id, periodo, sirve }, { onConflict: 'usuario_id,periodo' })
+    .select('sirve')
+    .single();
+  if (error) throw error;
+  return data.sirve;
 }
 
 // ----
