@@ -158,6 +158,17 @@
                             <button type="button" id="cronograma-ver-todo" class="btn btn-secondary cronograma-ver-todo hidden"></button>
                         </div>
                     </section>
+
+                    <!-- EN-108: si el plan le sirve (Happiness del GSM). Una
+                         respuesta por mes; solo sale cuando hay plan. -->
+                    <section id="bloque-opinion" class="tarjeta plan-opinion hidden" aria-labelledby="opinion-titulo">
+                        <h2 id="opinion-titulo" class="plan-opinion-titulo">¿Este plan te sirve?</h2>
+                        <div class="opinion-botones" role="group" aria-labelledby="opinion-titulo">
+                            <button type="button" class="opinion-boton" data-sirve="si" aria-pressed="false">Sí</button>
+                            <button type="button" class="opinion-boton" data-sirve="no" aria-pressed="false">No</button>
+                        </div>
+                        <p id="opinion-mensaje" class="plan-opinion-mensaje" aria-live="polite"></p>
+                    </section>
                 </div>
 
                 <div class="plan-acciones">
