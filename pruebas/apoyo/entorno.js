@@ -39,7 +39,7 @@ function crearSupabaseFalso(opciones) {
     consultas.push(consulta);
 
     const constructor = {};
-    ['select', 'insert', 'update', 'delete', 'eq', 'gte', 'lt', 'single', 'maybeSingle'].forEach(function (metodo) {
+    ['select', 'insert', 'update', 'upsert', 'delete', 'eq', 'gte', 'lt', 'single', 'maybeSingle'].forEach(function (metodo) {
       constructor[metodo] = function () {
         consulta.pasos.push({ metodo, args: Array.from(arguments) });
         return constructor;
