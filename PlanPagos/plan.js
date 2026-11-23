@@ -3,6 +3,7 @@
 // Dice cuanto abonarle a cada deuda ESTE MES con lo que queda despues de los
 // gastos esenciales. Debajo, repitiendo ese plan cada mes, la fecha estimada
 // para quedar libre de deudas (EN-77) y el cronograma hasta llegar ahi (EN-89).
+// Al final pregunta si el plan le sirve (EN-108).
 //
 // Este archivo solo maneja la pantalla: carga con datos.js, calcula con
 // calcularPlanPagos(), simularLibreDeDeudas() y resumirCronograma() de
@@ -21,7 +22,13 @@ const estado = {
   deudas: [],
   // Cronograma (EN-89): que vista se ve y si el mes a mes muestra todos los meses
   vistaCronograma: 'resumido',
-  cronogramaCompleto: false
+  cronogramaCompleto: false,
+  // "¿Este plan te sirve?" (EN-108): true / false / null si no ha respondido.
+  // Si no se pudo leer la respuesta la pregunta no se muestra.
+  opinion: null,
+  opinionDisponible: false,
+  guardandoOpinion: false,
+  errorOpinion: ''
 };
 
 // El mes a mes puede tener cientos de meses: de entrada solo el primer anio
@@ -138,6 +145,82 @@ function renderizar() {
     : null;
   renderizarLibre(simulacion);
   renderizarCronograma(simulacion);
+  renderizarOpinion(estadoPlan);
+}
+
+// ---------------------------------------------------------------------------
+// "¿Este plan te sirve?" (EN-108)
+// ---------------------------------------------------------------------------
+
+function textoOpinion(opinion) {
+  if (opinion === true) {
+    return '¡Gracias! Nos alegra que te sirva. Si cambias de opinión, puedes cambiar tu respuesta este mes.';
+  }
+  if (opinion === false) {
+    return 'Gracias por contarnos. Tu respuesta nos ayuda a mejorar el plan; puedes cambiarla este mes.';
+  }
+  return 'Tu respuesta nos ayuda a saber si el plan te es útil.';
+}
+
+// Solo se pregunta cuando hay un plan de abonos que calificar: sin deudas o
+// si no alcanza para los minimos no hay plan.
+function renderizarOpinion(estadoPlan) {
+  const bloque = porId('bloque-opinion');
+  if (estadoPlan !== 'plan' || !estado.opinionDisponible) {
+    bloque.classList.add('hidden');
+    return;
+  }
+
+  document.querySelectorAll('.opinion-boton').forEach(function (boton) {
+    const sirve = boton.dataset.sirve === 'si';
+    boton.setAttribute('aria-pressed', String(estado.opinion === sirve));
+    boton.disabled = estado.guardandoOpinion;
+  });
+
+  const mensaje = porId('opinion-mensaje');
+  mensaje.textContent = estado.errorOpinion || textoOpinion(estado.opinion);
+  mensaje.classList.toggle('error-msg', Boolean(estado.errorOpinion));
+  bloque.classList.remove('hidden');
+}
+
+async function responderOpinion(sirve) {
+  if (estado.guardandoOpinion) {
+    return;
+  }
+  estado.guardandoOpinion = true;
+  estado.errorOpinion = '';
+  renderizar();
+
+  try {
+    estado.opinion = await guardarOpinionPlan(periodo, sirve);
+  } catch (error) {
+    // Se queda la respuesta anterior: la que de verdad esta guardada
+    estado.errorOpinion = 'No pudimos guardar tu respuesta. Intenta de nuevo.';
+    console.error(error);
+  } finally {
+    estado.guardandoOpinion = false;
+    renderizar();
+  }
+}
+
+function conectarOpinion() {
+  document.querySelectorAll('.opinion-boton').forEach(function (boton) {
+    boton.addEventListener('click', function () {
+      responderOpinion(boton.dataset.sirve === 'si');
+    });
+  });
+}
+
+// Si la opinion no se puede leer (por ejemplo, la tabla aun no existe) el
+// plan se muestra igual, sin la pregunta.
+async function cargarOpinion() {
+  try {
+    estado.opinion = await obtenerOpinionPlan(periodo);
+    estado.opinionDisponible = true;
+  } catch (error) {
+    estado.opinionDisponible = false;
+    console.error(error);
+  }
 }
 
 // Textos de la tarjeta "cuando quedo libre" (EN-77), uno por estado de
@@ -446,7 +529,8 @@ async function cargarDatos() {
   const [ingresos, gastos, deudas] = await Promise.all([
     obtenerIngresos(periodo),
     obtenerGastos(periodo),
-    obtenerDeudas()
+    obtenerDeudas(),
+    cargarOpinion()
   ]);
 
   estado.ingresos = ingresos;
@@ -458,6 +542,7 @@ async function cargarDatos() {
 async function iniciar() {
   porId('periodo-nombre').textContent = nombreDelPeriodo(periodo);
   conectarCronograma();
+  conectarOpinion();
 
   // Mientras llegan los datos se muestra todo en cero y ningun plan
   renderizar();

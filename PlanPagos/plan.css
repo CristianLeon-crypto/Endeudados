@@ -514,3 +514,72 @@
   gap: 0.75rem;
   margin-top: 2rem;
 }
+
+/* ---------------------------------------------------------------------------
+ * "¿Este plan te sirve?" (EN-108)
+ * ------------------------------------------------------------------------- */
+
+.plan-opinion {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.plan-opinion-titulo {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.opinion-botones {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.opinion-boton {
+  min-width: 4.5rem;
+  padding: 0.5rem 1.1rem;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--marfil);
+  background: var(--superficie-fuerte);
+  border: 1px solid var(--borde-input);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.opinion-boton:hover:not(:disabled) {
+  border-color: var(--verde-claro);
+}
+
+.opinion-boton[aria-pressed="true"] {
+  color: var(--verde-tinta);
+  background: var(--verde-500);
+  border-color: var(--verde-500);
+}
+
+.opinion-boton:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.opinion-boton:focus-visible {
+  outline: 2px solid var(--verde-claro);
+  outline-offset: 2px;
+}
+
+/* El mensaje ocupa toda la fila, debajo de la pregunta y los botones */
+.plan-opinion-mensaje {
+  flex-basis: 100%;
+  font-size: 0.95rem;
+  color: var(--marfil-suave);
+}
+
+/* Con error vuelve el color de .error-msg, que .plan-opinion-mensaje pisaria */
+.plan-opinion-mensaje.error-msg {
+  margin-top: 0;
+  color: var(--terracota-claro);
+}
