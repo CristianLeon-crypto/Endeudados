@@ -44,6 +44,14 @@ formRegistro.addEventListener('submit', async function (event) {
     return;
   }
 
+  if (!document.getElementById('reg-autorizo').checked) {
+    mostrarError(
+      regError,
+      'Para crear tu cuenta debes autorizar el tratamiento de tus datos personales.'
+    );
+    return;
+  }
+
   try {
     // Un solo paso. Nombre y cédula viajan dentro del signUp y el perfil en
     // public.usuarios lo crea un trigger en la base de datos (EN-24, EN-25).
@@ -88,6 +96,15 @@ formRegistro.addEventListener('submit', async function (event) {
 
     if (!authData.user) {
       mostrarError(regError, 'No se pudo crear la cuenta. Intenta nuevamente.');
+      return;
+    }
+
+    // EN-65: la app es académica y la confirmación por correo está apagada en
+    // Supabase (mailer_autoconfirm), así que signUp ya devuelve la sesión y se
+    // entra directo. Si algún día se vuelve a encender, cae en el mensaje de
+    // abajo sin tocar este archivo.
+    if (authData.session) {
+      window.location.href = '../IngresosGastos/inGas.html';
       return;
     }
 

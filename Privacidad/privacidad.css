@@ -1,0 +1,43 @@
+/* Solo lo exclusivo de la politica de datos.
+ * Colores, tarjeta, navbar y botones vienen de shared/base.css.
+ */
+
+.contenedor-politica {
+  max-width: 760px;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.politica-bloque {
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.politica-bloque h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.politica-bloque p,
+.politica-bloque li {
+  color: var(--marfil-suave);
+  overflow-wrap: anywhere;
+}
+
+.politica-bloque p + p,
+.politica-bloque p + ul,
+.politica-bloque ul + p {
+  margin-top: 0.75rem;
+}
+
+.politica-bloque ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.politica-bloque strong {
+  color: var(--marfil);
+}

@@ -72,14 +72,19 @@ function pantallaLogin(auth) {
 }
 
 function llenar(el, valores) {
-  Object.keys(valores).forEach(function (id) { el(id).value = valores[id]; });
+  // Los booleanos son casillas (la autorizacion de datos de EN-52)
+  Object.keys(valores).forEach(function (id) {
+    if (typeof valores[id] === 'boolean') el(id).checked = valores[id];
+    else el(id).value = valores[id];
+  });
 }
 
 const REGISTRO_VALIDO = {
   'reg-nombre': '  Ana Pérez ',
   'reg-cedula': '1.020.304.050',
   'reg-email': ' ana@correo.co ',
-  'reg-password': 'secreta123'
+  'reg-password': 'secreta123',
+  'reg-autorizo': true
 };
 
 // Pantalla de recuperacion (shared/supabase.js + recPass.js)
@@ -356,6 +361,27 @@ test('EN-7: un registro valido manda nombre y cedula dentro del signUp', async f
   assert.match(el('reg-success').textContent, /^Registro exitoso/);
   assert.equal(el('reg-success').visible(), true);
   assert.equal(el('form-registro').reseteado, true);
+});
+
+test('EN-52: sin marcar la autorizacion de datos no intenta registrar', async function () {
+  const { sb, el } = pantallaLogin();
+  llenar(el, Object.assign({}, REGISTRO_VALIDO, { 'reg-autorizo': false }));
+
+  await el('form-registro').disparar('submit');
+
+  assert.equal(el('reg-error').textContent,
+    'Para crear tu cuenta debes autorizar el tratamiento de tus datos personales.');
+  assert.equal(sb.llamadasAuth.length, 0);
+});
+
+test('EN-65: sin confirmacion por correo el registro entra directo a Ingresos y Gastos', async function () {
+  const { el, ubicacion } = pantallaLogin({ signUp: { data: { user: { id: 'nuevo' }, session: { access_token: 't' } }, error: null } });
+  llenar(el, REGISTRO_VALIDO);
+
+  await el('form-registro').disparar('submit');
+
+  assert.equal(ubicacion.href, '../IngresosGastos/inGas.html');
+  assert.equal(el('reg-success').visible(), false);
 });
 
 test('EN-7: si se mandaron demasiados correos lo dice', async function () {
