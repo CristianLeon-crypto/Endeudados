@@ -450,7 +450,11 @@ function renderizarResumen(plan, hayDeficit) {
     `Ingresos ${formatearPesos(plan.totalIngresos)} menos gastos esenciales ${formatearPesos(plan.totalGastos)}`;
 
   porId('plan-minimos').textContent = formatearPesos(plan.pagoMinimoTotal);
-  porId('plan-minimos-detalle').textContent = textoCantidad(estado.deudas.length, 'deuda', 'deudas');
+  // EN-97: las deudas pagadas ya no cuentan; su minimo queda libre para el plan.
+  const activas = separarDeudasPorEstado(estado.deudas).activas.length;
+  const pagadas = estado.deudas.length - activas;
+  porId('plan-minimos-detalle').textContent = textoCantidad(activas, 'deuda', 'deudas') +
+    (pagadas > 0 ? ` · ${pagadas} ${pagadas === 1 ? 'pagada' : 'pagadas'}` : '');
 
   // Con excedente negativo la tercera cifra deja de ser el excedente y pasa a
   // ser lo que falta, diciendo para cubrir que.

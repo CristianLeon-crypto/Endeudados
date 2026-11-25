@@ -18,7 +18,6 @@ const inputCedula = document.getElementById('perfil-cedula');
 const inputEmail = document.getElementById('perfil-email');
 const btnGuardar = document.getElementById('btn-guardar');
 const btnDescartar = document.getElementById('btn-descartar');
-const btnCerrarSesion = document.getElementById('btn-cerrar-sesion');
 
 const formEliminar = document.getElementById('form-eliminar');
 const inputConfirmar = document.getElementById('confirmar-eliminar');
@@ -326,26 +325,6 @@ formEliminar.addEventListener('submit', async function (event) {
     btnEliminar.textContent = 'Eliminar mi cuenta para siempre';
     inputConfirmar.disabled = false;
     btnEliminar.disabled = !confirmacionValida();
-  }
-});
-
-// ---------------------------------------------------------------------------
-// Cerrar sesión
-// ---------------------------------------------------------------------------
-
-btnCerrarSesion.addEventListener('click', async function () {
-  btnCerrarSesion.disabled = true;
-
-  try {
-    const { error } = await sbClient.auth.signOut();
-    if (error) {
-      throw error;
-    }
-    window.location.replace('../LoginRegistro/loRe.html');
-  } catch (error) {
-    btnCerrarSesion.disabled = false;
-    mostrar(errorGeneral, 'No se pudo cerrar la sesión. Intenta nuevamente.');
-    console.error(error);
   }
 });
 

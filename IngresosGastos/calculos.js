@@ -209,11 +209,31 @@ function ordenarPorAvalancha(deudas) {
   });
 }
 
+// Una deuda con saldo cero ya esta pagada: sale del plan y de los totales,
+// pero no se borra (EN-97).
+function separarDeudasPorEstado(deudas) {
+  const activas = [];
+  const pagadas = [];
+
+  deudas.forEach(function (deuda) {
+    if (deuda.saldo > 0) {
+      activas.push(deuda);
+    } else {
+      pagadas.push(deuda);
+    }
+  });
+
+  return { activas, pagadas };
+}
+
 function calcularResumenDeudas(deudas) {
-  const ordenadas = ordenarPorAvalancha(deudas);
+  const ordenadas = ordenarPorAvalancha(separarDeudasPorEstado(deudas).activas);
 
   const saldoTotal = ordenadas.reduce(function (total, deuda) { return total + deuda.saldo; }, 0);
-  const pagoMinimoTotal = ordenadas.reduce(function (total, deuda) { return total + deuda.pagoMinimo; }, 0);
+  // El minimo nunca supera lo que se debe: una deuda saldada no suma minimo.
+  const pagoMinimoTotal = ordenadas.reduce(function (total, deuda) {
+    return total + Math.min(deuda.pagoMinimo, deuda.saldo);
+  }, 0);
   const interesMensual = ordenadas.reduce(function (total, deuda) {
     return total + calcularInteresMensual(deuda);
   }, 0);
@@ -227,6 +247,69 @@ function calcularResumenDeudas(deudas) {
     interesMensual: Math.round(interesMensual),
     prioridad: ordenadas[0] || null
   };
+}
+
+// Avance de pago (EN-95): cuanto se ha abonado a cada deuda y al total, y que
+// porcentaje del saldo inicial ya se pago. El saldo inicial se reconstruye con
+// el saldo actual mas lo abonado: es el saldo con el que se registro la deuda.
+function calcularAvanceDeudas(deudas, abonos) {
+  const listaAbonos = abonos || [];
+
+  const porDeuda = deudas.map(function (deuda) {
+    const abonado = listaAbonos.reduce(function (total, abono) {
+      return String(abono.deudaId) === String(deuda.id) ? total + abono.monto : total;
+    }, 0);
+    const saldoInicial = deuda.saldo + abonado;
+    const porcentaje = saldoInicial > 0 ? Math.min(100, (abonado / saldoInicial) * 100) : 0;
+
+    return {
+      id: deuda.id,
+      nombre: deuda.nombre,
+      saldo: deuda.saldo,
+      abonado,
+      saldoInicial,
+      porcentaje,
+      pagada: deuda.saldo <= 0
+    };
+  });
+
+  const totalAbonado = porDeuda.reduce(function (total, item) { return total + item.abonado; }, 0);
+  const saldoInicialTotal = porDeuda.reduce(function (total, item) { return total + item.saldoInicial; }, 0);
+  const saldoTotal = porDeuda.reduce(function (total, item) { return total + item.saldo; }, 0);
+
+  return {
+    porDeuda,
+    totalAbonado,
+    saldoInicialTotal,
+    saldoTotal,
+    porcentajeTotal: saldoInicialTotal > 0 ? Math.min(100, (totalAbonado / saldoInicialTotal) * 100) : 0
+  };
+}
+
+// Intereses que evito al saldarla (EN-97): lo que habria pagado si siguiera
+// debiendo el saldo inicial y abonara solo el minimo. null si no se puede
+// estimar (sin minimo o si el minimo no cubre los intereses).
+function calcularInteresesEvitados(deuda, periodoInicial) {
+  const saldoInicial = deuda.saldoInicial;
+  const capacidad = Math.min(deuda.pagoMinimo, saldoInicial);
+
+  if (!(saldoInicial > 0) || capacidad <= 0) {
+    return null;
+  }
+
+  const simulacion = simularConCapacidad(
+    [{
+      id: deuda.id,
+      nombre: deuda.nombre,
+      saldo: saldoInicial,
+      tasaEA: deuda.tasaEA,
+      pagoMinimo: deuda.pagoMinimo
+    }],
+    capacidad,
+    periodoInicial
+  );
+
+  return simulacion.estado === 'libre' ? Math.round(simulacion.totalIntereses) : null;
 }
 
 // Acepta "42,5", "42.5", "42" y "42,5 %". Devuelve NaN si no se entiende.
@@ -287,7 +370,7 @@ function validarDeuda(entrada) {
 // sobre va a la deuda de mayor tasa (la prioridad de la avalancha).
 //
 // estado:
-//   'sin-deudas'    no hay deudas registradas: no hay nada que planear
+//   'sin-deudas'    no hay deudas con saldo: no hay nada que planear
 //   'insuficiente'  la capacidad no cubre la suma de minimos: no hay plan
 //   'plan'          alcanza; pagos dice cuanto abonarle a cada deuda
 // ---------------------------------------------------------------------------

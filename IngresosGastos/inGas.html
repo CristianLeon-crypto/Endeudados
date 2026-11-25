@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Endeudados - Ingresos y Gastos</title>
+    <title>Endeudados - Ingresos y gastos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
@@ -15,44 +15,8 @@
 
 <body>
 
-    <header class="navbar">
-        <a href="../index.html" class="logo">
-            <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
-                <defs>
-                    <linearGradient id="logo-degradado" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0" stop-color="#1C1C1C" />
-                        <stop offset="1" stop-color="#28B660" />
-                    </linearGradient>
-                </defs>
-                <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#logo-degradado)" stroke="#F3ECDE"
-                    stroke-opacity="0.18" />
-                <rect x="9" y="11" width="22" height="4" rx="2" fill="#F3ECDE" />
-                <rect x="9" y="18" width="15" height="4" rx="2" fill="#F3ECDE" />
-                <rect x="9" y="25" width="8" height="4" rx="2" fill="#A9501C" />
-            </svg>
-            <span class="logo-texto">Endeudados</span>
-        </a>
-        <nav class="nav-links" aria-label="Secciones">
-            <a href="#resumen">Resumen</a>
-            <a href="#ingresos">Ingresos</a>
-            <a href="#gastos">Gastos</a>
-            <a href="#hormiga">Hormiga</a>
-            <a href="#deudas">Deudas</a>
-            <a href="../Deudas/deudas.html">Análisis</a>
-            <a href="../PlanPagos/plan.html">Plan de pagos</a>
-            <a href="../Perfil/perfil.html">Mi perfil</a>
-        </nav>
-        <div class="nav-buttons">
-    <p id="usuario-actual" class="chip-usuario hidden">
-        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" /></svg>
-        <span id="usuario-nombre"></span>
-    </p>
-    <button type="button" id="btn-cerrar-sesion" class="btn btn-ghost btn-cerrar-sesion">
-        <svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></svg>
-        <span class="texto-cerrar-sesion">Cerrar sesión</span>
-    </button>
-        </div>
-      </header>
+    <!-- EN-106: el menu lo pinta shared/menu.js en todas las pantallas internas -->
+    <header class="navbar" data-menu></header>
 
     <main>
 
@@ -464,6 +428,26 @@
                     </div>
                 </div>
 
+                <!-- EN-97: las deudas pagadas no se borran, quedan en el historial -->
+                <div id="bloque-deudas-pagadas" class="tarjeta lista-card hidden">
+                    <div class="lista-encabezado">
+                        <h3 class="formulario-titulo">Deudas pagadas</h3>
+                        <p class="lista-total">Quedan en el historial</p>
+                    </div>
+                    <div class="tabla-scroll">
+                        <table id="tabla-deudas-pagadas" class="tabla-datos">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Deuda</th>
+                                    <th scope="col" class="celda-monto">Saldo inicial</th>
+                                    <th scope="col" class="celda-monto">Abonado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-deudas-pagadas"></tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Continuar hacia el análisis financiero (gráficas) -->
                 <div class="acciones-resumen">
                     <a href="../Deudas/deudas.html" class="btn btn-primary">
@@ -550,6 +534,7 @@
     <!-- Orden importa: calculos y datos definen las funciones que usa inGas.js -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="../shared/supabase.js"></script>
+    <script src="../shared/menu.js"></script>
     <script src="calculos.js"></script>
     <script src="datos.js"></script>
     <script src="inGas.js"></script>

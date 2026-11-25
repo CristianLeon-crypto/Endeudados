@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Endeudados - Análisis financiero</title>
+    <title>Endeudados - Deudas y abonos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
@@ -16,37 +16,8 @@
 
 <body>
 
-    <header class="navbar">
-        <a href="../index.html" class="logo">
-            <svg class="logo-marca" viewBox="0 0 40 40" aria-hidden="true">
-                <defs>
-                    <linearGradient id="logo-degradado" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0" stop-color="#1C1C1C" />
-                        <stop offset="1" stop-color="#28B660" />
-                    </linearGradient>
-                </defs>
-                <rect x="0.5" y="0.5" width="39" height="39" rx="11.5" fill="url(#logo-degradado)" stroke="#F3ECDE"
-                    stroke-opacity="0.18" />
-                <rect x="9" y="11" width="22" height="4" rx="2" fill="#F3ECDE" />
-                <rect x="9" y="18" width="15" height="4" rx="2" fill="#F3ECDE" />
-                <rect x="9" y="25" width="8" height="4" rx="2" fill="#A9501C" />
-            </svg>
-            <span class="logo-texto">Endeudados</span>
-        </a>
-        <nav class="nav-links" aria-label="Secciones">
-            <a href="../IngresosGastos/inGas.html">Ingresos y gastos</a>
-            <a href="#resumen">Resumen</a>
-            <a href="#abonos">Abonos</a>
-            <a href="../PlanPagos/plan.html">Plan de pagos</a>
-        </nav>
-        <p id="usuario-actual" class="chip-usuario hidden">
-            <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="8" r="4" />
-                <path d="M5 21c0-3.9 3.1-7 7-7s7 3.1 7 7" />
-            </svg>
-            <span id="usuario-nombre"></span>
-        </p>
-    </header>
+    <!-- EN-106: el menu lo pinta shared/menu.js en todas las pantallas internas -->
+    <header class="navbar" data-menu></header>
 
     <main>
 
@@ -54,7 +25,7 @@
         <section id="resumen" class="seccion" aria-labelledby="titulo-resumen">
             <div class="contenedor">
                 <div class="encabezado-seccion izquierda">
-                    <span class="eyebrow"><span>Análisis financiero · <span id="periodo-nombre">este
+                    <span class="eyebrow"><span>Deudas y abonos · <span id="periodo-nombre">este
                                 mes</span></span></span>
                     <h1 id="titulo-resumen" class="titulo-seccion">Tu panorama, <span class="acento-serif">de un
                             vistazo</span></h1>
@@ -191,6 +162,21 @@
                     </div>
                 </div>
 
+                <!-- EN-97: mensaje de logro cuando un abono termina de pagar una deuda -->
+                <div id="logro-abono" class="logro-abono hidden" role="status">
+                    <svg class="icono" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 21h8" />
+                        <path d="M12 17v4" />
+                        <path d="M7 4h10v5a5 5 0 0 1-10 0Z" />
+                        <path d="M17 5h3v2a3 3 0 0 1-3 3" />
+                        <path d="M7 5H4v2a3 3 0 0 0 3 3" />
+                    </svg>
+                    <div>
+                        <strong id="logro-titulo"></strong>
+                        <span id="logro-detalle"></span>
+                    </div>
+                </div>
+
                 <div class="registro-grid">
                     <form id="form-abono" class="tarjeta formulario-registro" novalidate>
                         <h3 class="formulario-titulo">Registrar abono</h3>
@@ -257,6 +243,82 @@
             </div>
         </section>
 
+        <!-- EN-95: cuanto se ha abonado y cuanto falta, por deuda y en total -->
+        <section id="avance" class="seccion" aria-labelledby="titulo-avance">
+            <div class="contenedor">
+                <div class="encabezado-dividido">
+                    <span class="eyebrow">Avance</span>
+                    <div>
+                        <h2 id="titulo-avance" class="titulo-seccion">Cuánto has <span
+                                class="acento-serif">abonado</span></h2>
+                        <p class="texto-seccion">Comparado con el saldo con el que registraste cada deuda. Ver el avance
+                            es lo que sostiene el hábito.</p>
+                    </div>
+                </div>
+
+                <div class="tarjeta avance-card">
+                    <div class="avance-cifras">
+                        <p class="mini-dato">
+                            <span class="mini-etiqueta">Total abonado</span>
+                            <strong id="avance-abonado">$ 0</strong>
+                        </p>
+                        <p class="mini-dato">
+                            <span class="mini-etiqueta">Saldo inicial</span>
+                            <strong id="avance-inicial">$ 0</strong>
+                        </p>
+                        <p class="mini-dato">
+                            <span class="mini-etiqueta">Saldo actual</span>
+                            <strong id="avance-saldo">$ 0</strong>
+                        </p>
+                        <p class="mini-dato">
+                            <span class="mini-etiqueta">Pagado</span>
+                            <strong id="avance-porcentaje">0%</strong>
+                        </p>
+                    </div>
+
+                    <div id="avance-barra" class="barra" role="progressbar" aria-label="Porcentaje pagado del total"
+                        aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <span id="avance-relleno" class="barra-relleno"></span>
+                    </div>
+
+                    <ul id="lista-avance" class="avance-lista"></ul>
+                    <p id="vacio-avance" class="lista-vacia">Aún no registras deudas.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- EN-97: las deudas pagadas no se borran, quedan en el historial -->
+        <section id="logros" class="seccion seccion-alterna" aria-labelledby="titulo-logros">
+            <div class="contenedor">
+                <div class="encabezado-dividido">
+                    <span class="eyebrow">Logros</span>
+                    <div>
+                        <h2 id="titulo-logros" class="titulo-seccion">Deudas <span class="acento-serif">pagadas</span>
+                        </h2>
+                        <p class="texto-seccion">Quedan aquí como historial: no se borran. Con lo que se libera, el plan
+                            de pagos se recalcula solo.</p>
+                    </div>
+                </div>
+
+                <div class="tarjeta lista-card">
+                    <div class="tabla-scroll">
+                        <table id="tabla-logros" class="tabla-datos hidden">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Deuda</th>
+                                    <th scope="col" class="celda-monto">Saldo inicial</th>
+                                    <th scope="col" class="celda-monto">Abonado</th>
+                                    <th scope="col" class="celda-monto">Intereses evitados</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-logros"></tbody>
+                        </table>
+                    </div>
+                    <p id="vacio-logros" class="lista-vacia">Todavía no has terminado de pagar ninguna deuda.</p>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Plantilla de fila de abono. deudas.js la clona y la llena con textContent. -->
@@ -288,6 +350,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script src="../shared/supabase.js"></script>
+    <script src="../shared/menu.js"></script>
     <script src="../IngresosGastos/calculos.js"></script>
     <script src="../IngresosGastos/datos.js"></script>
     <script src="deudas.js"></script>

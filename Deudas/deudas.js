@@ -146,6 +146,8 @@ function renderizar() {
   renderizarRatios();
   renderizarProyeccion();
   renderizarAbonos();
+  renderizarAvance();
+  renderizarLogros();
 }
 
 // ---------------------------------------------------------------------------
@@ -326,18 +328,21 @@ function nombreDeuda(id) {
 function llenarSelectDeudas() {
   const select = porId('abono-deudaId');
   const valorPrevio = select.value;
+  // Una deuda pagada ya no se puede abonar: solo quedan las que tienen saldo.
+  const activas = separarDeudasPorEstado(estado.deudas).activas;
 
   select.replaceChildren(select.options[0]);
-  estado.deudas.forEach(function (deuda) {
+  activas.forEach(function (deuda) {
     const opcion = document.createElement('option');
     opcion.value = deuda.id;
     opcion.textContent = `${deuda.nombre} · ${formatearPesos(deuda.saldo)}`;
     select.appendChild(opcion);
   });
 
-  if (valorPrevio) {
-    select.value = valorPrevio;
-  }
+  const sigueActiva = activas.some(function (deuda) {
+    return String(deuda.id) === String(valorPrevio);
+  });
+  select.value = sigueActiva ? valorPrevio : '';
 }
 
 function renderizarAbonos() {
@@ -395,7 +400,7 @@ function conectarFormularioAbono() {
       monto: porId('abono-monto').value
     };
 
-    const resultado = validarAbono(entrada, estado.deudas);
+    const resultado = validarAbono(entrada, separarDeudasPorEstado(estado.deudas).activas);
 
     ['deudaId', 'monto'].forEach(function (campo) {
       if (resultado.errores[campo]) {
@@ -412,6 +417,12 @@ function conectarFormularioAbono() {
       porId(`abono-${primerCampo}`).focus();
       return;
     }
+
+    const deudaId = resultado.datos.deudaId;
+    const antes = estado.deudas.find(function (deuda) {
+      return String(deuda.id) === String(deudaId);
+    });
+    const saldoAnterior = antes ? antes.saldo : 0;
 
     boton.disabled = true;
 
@@ -430,6 +441,19 @@ function conectarFormularioAbono() {
 
       const total = estado.abonos.reduce(function (suma, a) { return suma + a.monto; }, 0);
       anunciar(`Abono agregado. Total abonado: ${formatearPesos(total)}.`);
+
+      // EN-97: si este abono termino de pagar la deuda, se celebra
+      const despues = estado.deudas.find(function (deuda) {
+        return String(deuda.id) === String(deudaId);
+      });
+      if (saldoAnterior > 0 && despues && despues.saldo <= 0) {
+        const avance = calcularAvanceDeudas([despues], estado.abonos).porDeuda[0];
+        const intereses = calcularInteresesEvitados(
+          Object.assign({}, despues, { saldoInicial: avance.saldoInicial }),
+          periodo
+        );
+        mostrarLogro(avance, intereses);
+      }
     } catch (error) {
       mostrar(errorGeneral, 'No se pudo guardar el abono. Intenta nuevamente.');
       console.error(error);
@@ -464,6 +488,7 @@ function conectarListaAbonos() {
 
       renderizar();
       llenarSelectDeudas();
+      ocultar(porId('logro-abono'));
       porId('titulo-lista-abonos').focus();
       anunciar('Abono eliminado.');
     } catch (error) {
@@ -472,6 +497,122 @@ function conectarListaAbonos() {
       console.error(error);
     }
   });
+}
+
+// ----
+// Avance (EN-95) y logros (EN-97)
+// ----
+
+function crearCelda(etiqueta, texto, titulo, clase) {
+  const celda = document.createElement(etiqueta);
+  celda.textContent = texto;
+  if (titulo) {
+    celda.dataset.titulo = titulo;
+  }
+  if (clase) {
+    celda.className = clase;
+  }
+  return celda;
+}
+
+function renderizarAvance() {
+  const avance = calcularAvanceDeudas(estado.deudas, estado.abonos);
+
+  porId('avance-abonado').textContent = formatearPesos(avance.totalAbonado);
+  porId('avance-inicial').textContent = formatearPesos(avance.saldoInicialTotal);
+  porId('avance-saldo').textContent = formatearPesos(avance.saldoTotal);
+  porId('avance-porcentaje').textContent = formatearPorcentaje(avance.porcentajeTotal);
+
+  const barra = porId('avance-barra');
+  barra.setAttribute('aria-valuenow', String(Math.round(avance.porcentajeTotal)));
+  barra.setAttribute('aria-valuetext', formatearPorcentaje(avance.porcentajeTotal));
+  porId('avance-relleno').style.width = `${avance.porcentajeTotal}%`;
+
+  const lista = porId('lista-avance');
+  lista.replaceChildren.apply(lista, avance.porDeuda.map(crearItemAvance));
+  porId('vacio-avance').classList.toggle('hidden', avance.porDeuda.length > 0);
+}
+
+// Una fila por deuda: nombre, cuanto se ha abonado de su saldo inicial y su
+// propia barra. La pagada lleva el chip y la barra llena.
+function crearItemAvance(item) {
+  const fila = document.createElement('li');
+  fila.className = item.pagada ? 'avance-item avance-item-pagada' : 'avance-item';
+
+  const encabezado = document.createElement('div');
+  encabezado.className = 'avance-item-encabezado';
+
+  const nombre = document.createElement('span');
+  nombre.className = 'avance-item-nombre';
+  nombre.textContent = item.nombre;
+  if (item.pagada) {
+    const chip = document.createElement('span');
+    chip.className = 'chip-pagada';
+    chip.textContent = 'Pagada';
+    nombre.append(' ', chip);
+  }
+
+  const cifra = document.createElement('span');
+  cifra.className = 'avance-item-cifra';
+  cifra.textContent =
+    `${formatearPorcentaje(item.porcentaje)} · ${formatearPesos(item.abonado)} de ${formatearPesos(item.saldoInicial)}`;
+
+  encabezado.append(nombre, cifra);
+
+  const barra = document.createElement('div');
+  barra.className = 'barra';
+  barra.setAttribute('role', 'progressbar');
+  barra.setAttribute('aria-label', `Avance de ${item.nombre}`);
+  barra.setAttribute('aria-valuemin', '0');
+  barra.setAttribute('aria-valuemax', '100');
+  barra.setAttribute('aria-valuenow', String(Math.round(item.porcentaje)));
+
+  const relleno = document.createElement('span');
+  relleno.className = 'barra-relleno';
+  relleno.style.width = `${item.porcentaje}%`;
+  barra.appendChild(relleno);
+
+  fila.append(encabezado, barra);
+  return fila;
+}
+
+// Historial de deudas pagadas: no se borran, quedan con su saldo inicial, lo
+// abonado y los intereses que se evitaron.
+function renderizarLogros() {
+  const pagadas = separarDeudasPorEstado(estado.deudas).pagadas;
+  const avance = calcularAvanceDeudas(pagadas, estado.abonos);
+
+  const filas = porId('lista-logros');
+  filas.replaceChildren.apply(filas, avance.porDeuda.map(function (item) {
+    const deuda = pagadas.find(function (d) { return String(d.id) === String(item.id); });
+    const intereses = calcularInteresesEvitados(
+      Object.assign({}, deuda, { saldoInicial: item.saldoInicial }),
+      periodo
+    );
+
+    const fila = document.createElement('tr');
+    const nombre = crearCelda('th', item.nombre, null, 'celda-deuda');
+    nombre.scope = 'row';
+    fila.append(
+      nombre,
+      crearCelda('td', formatearPesos(item.saldoInicial), 'Saldo inicial', 'celda-monto'),
+      crearCelda('td', formatearPesos(item.abonado), 'Abonado', 'celda-monto'),
+      crearCelda('td', intereses === null ? '—' : formatearPesos(intereses), 'Intereses evitados',
+        'celda-monto celda-interes')
+    );
+    return fila;
+  }));
+
+  porId('tabla-logros').classList.toggle('hidden', avance.porDeuda.length === 0);
+  porId('vacio-logros').classList.toggle('hidden', avance.porDeuda.length > 0);
+}
+
+function mostrarLogro(avance, intereses) {
+  porId('logro-titulo').textContent = `¡Deuda pagada: ${avance.nombre}!`;
+  porId('logro-detalle').textContent = intereses === null
+    ? `Abonaste ${formatearPesos(avance.abonado)} y ya no debes nada. Evitaste los intereses de seguir debiendo.`
+    : `Abonaste ${formatearPesos(avance.abonado)} y ya no debes nada. Si hubieras pagado solo el mínimo, habrías pagado ${formatearPesos(intereses)} en intereses: te los ahorraste.`;
+  porId('logro-abono').classList.remove('hidden');
 }
 
 // ----

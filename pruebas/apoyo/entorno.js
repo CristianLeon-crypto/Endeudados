@@ -91,13 +91,21 @@ function pasos(consulta, metodo) {
 function crearElemento(id) {
   const clases = new Set();
   const escuchas = {};
+  const atributos = {};
+  const hijos = [];
 
   return {
     id,
     value: '',
     textContent: '',
+    innerHTML: '',
+    className: '',
     disabled: false,
     reseteado: false,
+    style: {},
+    dataset: {},
+    children: hijos,
+    options: [],
     classList: {
       add: function (c) { clases.add(c); },
       remove: function (c) { clases.delete(c); },
@@ -108,6 +116,24 @@ function crearElemento(id) {
         return poner;
       }
     },
+    setAttribute: function (nombre, valor) { atributos[nombre] = String(valor); },
+    getAttribute: function (nombre) { return atributos[nombre]; },
+    removeAttribute: function (nombre) { delete atributos[nombre]; },
+    append: function () {
+      Array.from(arguments).forEach(function (hijo) { hijos.push(hijo); });
+    },
+    appendChild: function (hijo) {
+      hijos.push(hijo);
+      return hijo;
+    },
+    replaceChildren: function () {
+      hijos.length = 0;
+      Array.from(arguments).forEach(function (hijo) { hijos.push(hijo); });
+    },
+    querySelector: function () { return null; },
+    querySelectorAll: function () { return []; },
+    closest: function () { return null; },
+    focus: function () {},
     addEventListener: function (tipo, fn) {
       (escuchas[tipo] = escuchas[tipo] || []).push(fn);
     },
@@ -133,7 +159,14 @@ function crearDocumentoFalso() {
         elementos[id] = crearElemento(id);
       }
       return elementos[id];
-    }
+    },
+    createElement: function (etiqueta) {
+      const elemento = crearElemento(null);
+      elemento.tagName = String(etiqueta).toUpperCase();
+      return elemento;
+    },
+    querySelector: function () { return null; },
+    querySelectorAll: function () { return []; }
   };
 }
 

@@ -208,6 +208,12 @@ svg {
   background: var(--superficie-fuerte);
 }
 
+/* Opcion de la pantalla actual (EN-106) */
+.nav-links a[aria-current="page"] {
+  color: var(--marfil);
+  background: var(--superficie-fuerte);
+}
+
 .nav-buttons {
   display: flex;
   align-items: center;
@@ -265,6 +271,36 @@ svg {
   .chip-usuario {
     display: none;
   }
+}
+
+/* Cerrar sesion: boton fantasma junto al chip del usuario. En celular se
+ * queda solo el icono, para no competir por espacio con la barra de
+ * secciones que ya se arrastra en horizontal. */
+.btn-cerrar-sesion {
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .btn-cerrar-sesion {
+    padding: 0.55rem;
+  }
+
+  .texto-cerrar-sesion {
+    display: none;
+  }
+}
+
+/* Aviso de "no se pudo cerrar la sesion", debajo de la barra */
+.menu-error {
+  position: fixed;
+  top: calc(var(--alto-navbar) + 0.5rem);
+  right: clamp(1rem, 4vw, 3rem);
+  z-index: 60;
+  max-width: min(90vw, 22rem);
+  margin: 0;
+  box-shadow: var(--sombra);
 }
 
 /* ---------------------------------------------------------------------------

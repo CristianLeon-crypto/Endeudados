@@ -158,3 +158,115 @@
   width: 100%;
   accent-color: #28B660;
 }
+
+/* ---- EN-95: avance de pago ---- */
+
+.avance-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.avance-cifras {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 760px) {
+  .avance-cifras {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.avance-lista {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.avance-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.avance-item-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+}
+
+.avance-item-nombre {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.avance-item-cifra {
+  font-size: 0.85rem;
+  color: var(--marfil-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.avance-item-pagada .barra-relleno {
+  background: linear-gradient(90deg, var(--verde-500), var(--verde-claro));
+}
+
+.chip-pagada {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--marfil);
+  background: var(--verde-500);
+  border-radius: 999px;
+}
+
+/* ---- EN-97: mensaje de logro ---- */
+
+.logro-abono {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  color: var(--marfil);
+  background: rgba(40, 182, 96, 0.14);
+  border: 1px solid var(--verde-500);
+  border-radius: var(--radio-md);
+}
+
+.logro-abono .icono {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--verde-claro);
+}
+
+.logro-abono strong {
+  display: block;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.logro-abono span {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+  color: var(--marfil-suave);
+}
+
+.celda-deuda {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.celda-interes {
+  color: var(--verde-claro);
+}

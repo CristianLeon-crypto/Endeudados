@@ -21,7 +21,8 @@ const estado = {
   ingresos: [],
   gastos: [],
   gastosHormiga: [],
-  deudas: []
+  deudas: [],
+  abonos: []
 };
 
 
@@ -181,6 +182,7 @@ function renderizar() {
   Object.keys(tipos).forEach(renderizarLista);
   renderizarResumenHormiga();
   renderizarResumenDeudas();
+  renderizarDeudasPagadas();
 }
 
 function renderizarResumen() {
@@ -236,9 +238,44 @@ function renderizarResumenDeudas() {
     : 'Registra tus deudas para saber cuál pagar primero.';
 }
 
+// EN-97: historial de deudas pagadas. No se borran; quedan con el saldo con el
+// que se registraron y lo que se les abono.
+function renderizarDeudasPagadas() {
+  const pagadas = separarDeudasPorEstado(estado.deudas).pagadas;
+  const avance = calcularAvanceDeudas(pagadas, estado.abonos);
+  const filas = porId('lista-deudas-pagadas');
+
+  filas.replaceChildren.apply(filas, avance.porDeuda.map(function (item) {
+    const fila = document.createElement('tr');
+
+    const nombre = document.createElement('th');
+    nombre.scope = 'row';
+    nombre.className = 'celda-deuda';
+    nombre.textContent = item.nombre;
+
+    const inicial = document.createElement('td');
+    inicial.className = 'celda-monto';
+    inicial.dataset.titulo = 'Saldo inicial';
+    inicial.textContent = formatearPesos(item.saldoInicial);
+
+    const abonado = document.createElement('td');
+    abonado.className = 'celda-monto';
+    abonado.dataset.titulo = 'Abonado';
+    abonado.textContent = formatearPesos(item.abonado);
+
+    fila.append(nombre, inicial, abonado);
+    return fila;
+  }));
+
+  porId('bloque-deudas-pagadas').classList.toggle('hidden', avance.porDeuda.length === 0);
+}
+
 function renderizarLista(tipo) {
   const config = tipos[tipo];
-  const guardados = estado[config.coleccion];
+  // Las deudas pagadas salen de la tabla activa y pasan al historial (EN-97).
+  const guardados = tipo === 'deuda'
+    ? separarDeudasPorEstado(estado[config.coleccion]).activas
+    : estado[config.coleccion];
 
   const registros = config.ordenar
     ? config.ordenar(guardados)
@@ -585,30 +622,6 @@ function conectarLista(tipo) {
 }
 
 // ---------------------------------------------------------------------------
-// Cerrar sesion
-// ---------------------------------------------------------------------------
-
-// Cierra la sesion en Supabase y vuelve al login. Si signOut falla se deja el
-// boton activo para que el usuario pueda intentar de nuevo, en vez de dejarlo
-// varado con la sesion a medio cerrar.
-function conectarCerrarSesion() {
-  const boton = porId('btn-cerrar-sesion');
-
-  boton.addEventListener('click', async function () {
-    boton.disabled = true;
-
-    try {
-      await cerrarSesion();
-      window.location.replace('../LoginRegistro/loRe.html');
-    } catch (error) {
-      boton.disabled = false;
-      anunciar('No se pudo cerrar la sesión. Intenta nuevamente.');
-      console.error(error);
-    }
-  });
-}
-
-// ---------------------------------------------------------------------------
 // Inicio
 // ---------------------------------------------------------------------------
 
@@ -630,12 +643,13 @@ async function verificarSesion() {
 }
 
 async function cargarDatos() {
-  const [categorias, ingresos, gastos, gastosHormiga, deudas] = await Promise.all([
+  const [categorias, ingresos, gastos, gastosHormiga, deudas, abonos] = await Promise.all([
     obtenerCategorias(),
     obtenerIngresos(periodo),
     obtenerGastos(periodo),
     obtenerGastosHormiga(periodo),
-    obtenerDeudas()
+    obtenerDeudas(),
+    obtenerAbonos()
   ]);
 
   estado.categorias = categorias;
@@ -643,6 +657,7 @@ async function cargarDatos() {
   estado.gastos = gastos;
   estado.gastosHormiga = gastosHormiga;
   estado.deudas = deudas;
+  estado.abonos = abonos;
 
   llenarCategorias();
 }
@@ -654,7 +669,6 @@ async function iniciar() {
     conectarFormulario(tipo);
     conectarLista(tipo);
   });
-  conectarCerrarSesion();
 
   // Mientras llegan los datos se muestra todo en cero y no se deja enviar nada,
   // para que un registro nuevo no se pierda cuando termine la carga.

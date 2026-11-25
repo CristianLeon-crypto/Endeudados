@@ -11,11 +11,6 @@
   margin: 0 0 1.5rem;
 }
 
-.nav-links a[aria-current="page"] {
-  color: var(--marfil);
-  background: var(--superficie-fuerte);
-}
-
 /* ---------------------------------------------------------------------------
  * Resumen: capacidad, minimos y excedente
  * ------------------------------------------------------------------------- */
